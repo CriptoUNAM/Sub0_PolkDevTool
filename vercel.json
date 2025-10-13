@@ -8,11 +8,6 @@
       "maxDuration": 30
     }
   },
-  "env": {
-    "OPENAI_API_KEY": "@openai_api_key",
-    "GROQ_API_KEY": "@groq_api_key",
-    "CONTEXT7_API_KEY": "@context7_api_key"
-  },
   "headers": [
     {
       "source": "/sw.js",
