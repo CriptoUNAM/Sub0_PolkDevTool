@@ -6,6 +6,7 @@ import { Navbar } from '@/components/navigation/Navbar'
 import ChatBot from '@/components/chat/ChatBot'
 import { Footer } from '@/components/navigation/Footer'
 import { ServiceWorker } from '@/components/ServiceWorker'
+import { ClientOnly } from '@/components/ClientOnly'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -71,7 +72,9 @@ export default function RootLayout({
         <main className="pt-16 min-h-screen overflow-x-hidden">
           {children}
         </main>
-          <Footer />
+          <ClientOnly>
+            <Footer />
+          </ClientOnly>
           <ChatBot />
           <ServiceWorker />
         </WalletProvider>

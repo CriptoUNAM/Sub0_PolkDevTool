@@ -2,6 +2,9 @@
 const nextConfig = {
   output: 'standalone',
   serverExternalPackages: ['@polkadot/api', '@polkadot/api-contract'],
+  experimental: {
+    missingSuspenseWithCSRBailout: false,
+  },
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
