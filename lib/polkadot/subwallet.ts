@@ -83,7 +83,7 @@ export class SubWalletService {
         throw new Error('No se pudo obtener el signer de SubWallet');
       }
 
-      return injector.signer;
+      return injector.signer as any;
     } catch (error) {
       console.error('Failed to get signer:', error);
       throw new Error('No se pudo obtener el signer de SubWallet');
@@ -143,7 +143,7 @@ export class SubWalletService {
       const transfer = this.api.tx.balances.transfer(to, amount);
       
       // Sign and send transaction
-      const txHash = await transfer.signAndSend(from, { signer });
+      const txHash = await transfer.signAndSend(from, { signer: signer as any });
       
       console.log('📤 Transaction sent:', txHash);
       return txHash.toString();
@@ -175,7 +175,7 @@ export class SubWalletService {
       );
       
       // Sign and send transaction
-      const txHash = await instantiate.signAndSend(from, { signer });
+      const txHash = await instantiate.signAndSend(from, { signer: signer as any });
       
       console.log('📤 Contract deployment sent:', txHash);
       return txHash.toString();
