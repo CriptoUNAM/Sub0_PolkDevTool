@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { ResponsiveContainer } from '@/components/ui/ResponsiveContainer';
 import { ResponsiveText } from '@/components/ui/ResponsiveText';
+import { ClientOnly } from '@/components/ClientOnly';
 
 export function ResponsiveFooter() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -38,7 +39,7 @@ export function ResponsiveFooter() {
       connections: number[];
     }> = [];
     
-    const particleCount = window.innerWidth < 640 ? 30 : 60;
+    const particleCount = typeof window !== 'undefined' && window.innerWidth < 640 ? 30 : 60;
 
     for (let i = 0; i < particleCount; i++) {
       particles.push({
@@ -123,10 +124,12 @@ export function ResponsiveFooter() {
     <footer className="relative mt-12 sm:mt-20 overflow-hidden">
       {/* Neural Background */}
       <div className="absolute inset-0">
-        <canvas
-          ref={canvasRef}
-          className="w-full h-full opacity-40"
-        />
+        <ClientOnly>
+          <canvas
+            ref={canvasRef}
+            className="w-full h-full opacity-40"
+          />
+        </ClientOnly>
       </div>
 
       {/* Glassmorphism Container */}
