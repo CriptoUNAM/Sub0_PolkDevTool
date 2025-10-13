@@ -1,0 +1,58 @@
+{
+  "network": "Paseo Testnet",
+  "rpc": "wss://paseo.rpc.amforc.com",
+  "explorer": "https://polkadot.js.org/apps/?rpc=wss://paseo.rpc.amforc.com",
+  "simulation": true,
+  "note": "Este es un demo - todos los deployments son simulados",
+  "contracts": {
+    "demo_contract": {
+      "address": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+      "type": "PSP-22 Token",
+      "deployed_at": "2024-01-15T10:30:00Z",
+      "simulated": true,
+      "abi": {
+        "mint": {
+          "inputs": [{"name": "to", "type": "AccountId"}, {"name": "amount", "type": "u128"}],
+          "outputs": [{"type": "Result<(), Error>"}]
+        },
+        "transfer": {
+          "inputs": [{"name": "to", "type": "AccountId"}, {"name": "amount", "type": "u128"}],
+          "outputs": [{"type": "Result<(), Error>"}]
+        },
+        "balance_of": {
+          "inputs": [{"name": "account", "type": "AccountId"}],
+          "outputs": [{"type": "u128"}]
+        },
+        "total_supply": {
+          "inputs": [],
+          "outputs": [{"type": "u128"}]
+        }
+      }
+    }
+  },
+  "deployment": {
+    "steps": [
+      "1. Conectar SubWallet a Paseo Testnet",
+      "2. Obtener tokens de testnet desde faucet",
+      "3. Compilar contrato ink! a WASM",
+      "4. Subir código del contrato",
+      "5. Instanciar contrato con parámetros",
+      "6. Verificar deployment en explorer"
+    ],
+    "requirements": {
+      "min_balance": "1 DOT",
+      "gas_limit": "1000000000",
+      "storage_deposit": "1000000000000"
+    }
+  },
+  "testing": {
+    "functions": {
+      "write": ["mint", "transfer"],
+      "read": ["balance_of", "total_supply"]
+    },
+    "test_accounts": [
+      "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+      "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty"
+    ]
+  }
+}

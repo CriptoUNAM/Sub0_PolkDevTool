@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-white antialiased;
+    overflow-x: hidden;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  * {
+    box-sizing: border-box;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply backdrop-blur-xl bg-white/10 border border-white/20 
+           shadow-2xl rounded-xl sm:rounded-2xl;
+  }
+  
+  .glass-hover {
+    @apply transition-all duration-300 hover:bg-white/15 
+           hover:shadow-purple-500/50 hover:shadow-2xl 
+           hover:scale-105;
+  }
+  
+  .gradient-text {
+    @apply bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 
+           bg-clip-text text-transparent;
+  }
+  
+  .gradient-border {
+    @apply border-2 border-transparent bg-gradient-to-r 
+           from-purple-500 to-cyan-500 bg-clip-border;
+  }
+  
+  .neural-glow {
+    @apply shadow-[0_0_50px_rgba(139,92,246,0.3)];
+  }
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(139,92,246,0.3); }
+  50% { box-shadow: 0 0 40px rgba(236,72,153,0.5); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
