@@ -34,6 +34,9 @@ export function WalletProvider({ children }: WalletProviderProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    // Check if we're in browser environment
+    if (typeof window === 'undefined') return;
+    
     // Check if wallet is already connected
     const savedAccount = localStorage.getItem('polkadot-devkit-account');
     if (savedAccount) {
@@ -62,9 +65,11 @@ export function WalletProvider({ children }: WalletProviderProps) {
         
         setAccount(selectedAccount.address);
         setIsConnected(true);
-        localStorage.setItem('polkadot-devkit-account', selectedAccount.address);
-        localStorage.setItem('polkadot-devkit-wallet-source', selectedAccount.source);
-        localStorage.setItem('polkadot-devkit-account-name', selectedAccount.name);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('polkadot-devkit-account', selectedAccount.address);
+          localStorage.setItem('polkadot-devkit-wallet-source', selectedAccount.source);
+          localStorage.setItem('polkadot-devkit-account-name', selectedAccount.name);
+        }
         
         console.log('🔗 Connected to wallet:', selectedAccount.source);
         console.log('📍 Account address:', selectedAccount.address);
@@ -76,9 +81,11 @@ export function WalletProvider({ children }: WalletProviderProps) {
         
         setAccount(selectedAccount.address);
         setIsConnected(true);
-        localStorage.setItem('polkadot-devkit-account', selectedAccount.address);
-        localStorage.setItem('polkadot-devkit-wallet-source', selectedAccount.source);
-        localStorage.setItem('polkadot-devkit-account-name', selectedAccount.name);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('polkadot-devkit-account', selectedAccount.address);
+          localStorage.setItem('polkadot-devkit-wallet-source', selectedAccount.source);
+          localStorage.setItem('polkadot-devkit-account-name', selectedAccount.name);
+        }
         
         console.log('✅ SubWallet connected:', selectedAccount.name);
         console.log('📍 Account address:', selectedAccount.address);
@@ -110,9 +117,11 @@ export function WalletProvider({ children }: WalletProviderProps) {
     await subWalletService.disconnect();
     setAccount(null);
     setIsConnected(false);
-    localStorage.removeItem('polkadot-devkit-account');
-    localStorage.removeItem('polkadot-devkit-wallet-source');
-    localStorage.removeItem('polkadot-devkit-account-name');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('polkadot-devkit-account');
+      localStorage.removeItem('polkadot-devkit-wallet-source');
+      localStorage.removeItem('polkadot-devkit-account-name');
+    }
   };
 
   const signTransaction = async (transaction: any): Promise<string> => {
