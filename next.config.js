@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
+  output: 'standalone',
   serverExternalPackages: ['@polkadot/api', '@polkadot/api-contract'],
   experimental: {
     // Removed unsupported experimental options
