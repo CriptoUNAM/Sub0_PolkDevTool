@@ -1,9 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-
-// Force dynamic rendering
-export const dynamic = 'force-dynamic';
 import { motion } from 'framer-motion';
 import { 
   FileText, 
@@ -150,9 +147,11 @@ export default function ExplainPage() {
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (typeof window !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(code);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
     } catch (err) {
       console.error('Failed to copy code:', err);
     }
@@ -284,15 +283,17 @@ export default function ExplainPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        const blob = new Blob([explanation], { type: 'text/plain' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'explanation.txt';
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
+                        if (typeof window !== 'undefined') {
+                          const blob = new Blob([explanation], { type: 'text/plain' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = 'explanation.txt';
+                          document.body.appendChild(a);
+                          a.click();
+                          document.body.removeChild(a);
+                          URL.revokeObjectURL(url);
+                        }
                       }}
                     >
                       <Copy className="w-4 h-4" />

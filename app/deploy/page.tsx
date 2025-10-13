@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+
+// Force dynamic rendering to avoid SSR issues with wallet hooks
+export const dynamic = 'force-dynamic';
 import { motion } from 'framer-motion';
 import { 
   Rocket, 

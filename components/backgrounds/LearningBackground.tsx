@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { ClientOnly } from '@/components/ClientOnly';
 
 export function LearningBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -159,10 +160,12 @@ export function LearningBackground() {
 
   return (
     <div className="fixed inset-0 -z-10">
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 opacity-40"
-      />
+      <ClientOnly>
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 opacity-40"
+        />
+      </ClientOnly>
       {/* Additional glassmorphism overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-purple-900/10 via-transparent to-pink-900/10" />
       <div className="absolute inset-0 bg-gradient-to-tl from-blue-900/5 via-transparent to-green-900/5" />

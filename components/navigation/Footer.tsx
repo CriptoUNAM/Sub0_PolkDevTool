@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { ClientOnly } from '@/components/ClientOnly';
 
 export function Footer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -121,10 +122,12 @@ export function Footer() {
     <footer className="relative mt-20 overflow-hidden">
       {/* Neural Background */}
       <div className="absolute inset-0">
-        <canvas
-          ref={canvasRef}
-          className="w-full h-full opacity-40"
-        />
+        <ClientOnly>
+          <canvas
+            ref={canvasRef}
+            className="w-full h-full opacity-40"
+          />
+        </ClientOnly>
       </div>
 
       {/* Glassmorphism Container */}

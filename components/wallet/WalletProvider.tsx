@@ -38,10 +38,14 @@ export function WalletProvider({ children }: WalletProviderProps) {
     if (typeof window === 'undefined') return;
     
     // Check if wallet is already connected
-    const savedAccount = localStorage.getItem('polkadot-devkit-account');
-    if (savedAccount) {
-      setAccount(savedAccount);
-      setIsConnected(true);
+    try {
+      const savedAccount = localStorage.getItem('polkadot-devkit-account');
+      if (savedAccount) {
+        setAccount(savedAccount);
+        setIsConnected(true);
+      }
+    } catch (error) {
+      console.warn('Error accessing localStorage:', error);
     }
   }, []);
 

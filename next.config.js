@@ -1,10 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
+  output: 'export',
   serverExternalPackages: ['@polkadot/api', '@polkadot/api-contract'],
   experimental: {
-    missingSuspenseWithCSRBailout: false,
+    // Removed unsupported experimental options
   },
+  trailingSlash: true,
+  skipTrailingSlashRedirect: true,
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {

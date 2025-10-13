@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { ClientOnly } from '@/components/ClientOnly';
 
 export function GridPattern() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -71,9 +72,11 @@ export function GridPattern() {
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 -z-10 opacity-30"
-    />
+    <ClientOnly>
+      <canvas
+        ref={canvasRef}
+        className="fixed inset-0 -z-10 opacity-30"
+      />
+    </ClientOnly>
   );
 }

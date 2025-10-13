@@ -36,11 +36,15 @@ export function SubWalletInstructions({ isAvailable, isConnected }: SubWalletIns
   ];
 
   const handleInstallSubWallet = () => {
-    window.open('https://subwallet.app/', '_blank');
+    if (typeof window !== 'undefined') {
+      window.open('https://subwallet.app/', '_blank');
+    }
   };
 
   const handleOpenFaucet = () => {
-    window.open('https://polkadot.js.org/apps/?rpc=wss://paseo.rpc.amforc.com#/accounts', '_blank');
+    if (typeof window !== 'undefined') {
+      window.open('https://polkadot.js.org/apps/?rpc=wss://paseo.rpc.amforc.com#/accounts', '_blank');
+    }
   };
 
   return (

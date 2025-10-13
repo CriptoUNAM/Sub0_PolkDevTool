@@ -124,7 +124,9 @@ export function LearningCard({
             variant="secondary"
             onClick={(e) => {
               e.stopPropagation();
-              window.open(url, '_blank');
+              if (typeof window !== 'undefined') {
+                window.open(url, '_blank');
+              }
             }}
           >
             <ExternalLink className="w-3 h-3 mr-2" />

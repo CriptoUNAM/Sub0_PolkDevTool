@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { ClientOnly } from '@/components/ClientOnly';
 
 export function ParticleField() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -88,9 +89,11 @@ export function ParticleField() {
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 -z-10 opacity-20"
-    />
+    <ClientOnly>
+      <canvas
+        ref={canvasRef}
+        className="fixed inset-0 -z-10 opacity-20"
+      />
+    </ClientOnly>
   );
 }

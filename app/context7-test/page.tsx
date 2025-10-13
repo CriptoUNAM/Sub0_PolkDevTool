@@ -1,4 +1,9 @@
+'use client';
+
 import { Context7Test } from '@/components/context7/Context7Test';
+
+// Force dynamic rendering to avoid SSR issues
+export const dynamic = 'force-dynamic';
 
 export default function Context7TestPage() {
   return (

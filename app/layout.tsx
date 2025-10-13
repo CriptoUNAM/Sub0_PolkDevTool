@@ -15,11 +15,12 @@ export const metadata: Metadata = {
   description: 'Accelerate your Polkadot development with AI-generated ink! smart contracts, templates, and debugging tools.',
   keywords: 'Polkadot, Substrate, ink!, smart contracts, AI, blockchain development',
   authors: [{ name: 'Polkadot DevKit Team' }],
+  metadataBase: new URL('https://polkadot-dev-kit.vercel.app'),
   openGraph: {
     title: 'Polkadot DevKit - AI-Powered Substrate Development',
     description: 'Cut Substrate development time by 70% with AI assistance',
     type: 'website',
-    url: 'https://polkadot-devkit.vercel.app',
+    url: 'https://polkadot-dev-kit.vercel.app',
     siteName: 'Polkadot DevKit',
     images: [
       {
@@ -37,8 +38,6 @@ export const metadata: Metadata = {
     images: ['/og-image.png'],
   },
   manifest: '/manifest.json',
-  themeColor: '#8b5cf6',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -47,6 +46,14 @@ export const metadata: Metadata = {
   formatDetection: {
     telephone: false,
   },
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: '#8b5cf6',
 }
 
 export default function RootLayout({
@@ -76,7 +83,9 @@ export default function RootLayout({
             <Footer />
           </ClientOnly>
           <ChatBot />
-          <ServiceWorker />
+          <ClientOnly>
+            <ServiceWorker />
+          </ClientOnly>
         </WalletProvider>
       </body>
     </html>

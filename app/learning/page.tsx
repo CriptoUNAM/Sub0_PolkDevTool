@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+
+// Force dynamic rendering to avoid SSR issues
+export const dynamic = 'force-dynamic';
 import { 
   BookOpen, 
   ExternalLink, 
@@ -33,8 +36,6 @@ import { LearningCard } from '@/components/ui/LearningCard';
 import { LearningStats } from '@/components/learning/LearningStats';
 import { LearningPath } from '@/components/learning/LearningPath';
 
-// Force dynamic rendering
-export const dynamic = 'force-dynamic';
 
 export default function LearningPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
