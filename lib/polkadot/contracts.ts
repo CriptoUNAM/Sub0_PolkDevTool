@@ -36,7 +36,7 @@ export async function deployContract(
     // Sign and send the transaction
     const unsub = await tx.signAndSend(
       senderAddress,
-      { signer: injector.signer },
+      { signer: injector.signer as any },
       ({ status, events }) => {
         if (status.isInBlock) {
           console.log('Contract deployment transaction included in block');
