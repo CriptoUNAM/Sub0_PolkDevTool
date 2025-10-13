@@ -50,7 +50,7 @@ export function useSubWallet(): SubWalletInfo {
           console.log('🔍 SubWallet extension found:', {
             name: subwalletExtension.name,
             version: subwalletExtension.version,
-            accounts: subwalletExtension.accounts?.length || 0
+            accounts: Array.isArray(subwalletExtension.accounts) ? subwalletExtension.accounts.length : 0
           });
         }
 

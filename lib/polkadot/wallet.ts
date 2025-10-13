@@ -43,7 +43,7 @@ export async function signTransaction(
   try {
     const injector = await getInjector(address);
     
-    if (!injector.signer) {
+    if (!injector.signer || !injector.signer.signRaw) {
       throw new Error('No signer available');
     }
     

@@ -9,7 +9,9 @@
     }
   },
   "env": {
-    "OPENAI_API_KEY": "@openai_api_key"
+    "OPENAI_API_KEY": "@openai_api_key",
+    "GROQ_API_KEY": "@groq_api_key",
+    "CONTEXT7_API_KEY": "@context7_api_key"
   },
   "headers": [
     {
@@ -29,6 +31,23 @@
           "value": "public, max-age=31536000, immutable"
         }
       ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
     }
   ],
   "rewrites": [
@@ -36,5 +55,13 @@
       "source": "/test",
       "destination": "/test"
     }
-  ]
+  ],
+  "regions": ["iad1"],
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_PASEO_RPC": "wss://paseo.rpc.amforc.com",
+      "NEXT_PUBLIC_ROCCO_RPC": "wss://rococo-rpc.polkadot.io",
+      "NEXT_PUBLIC_WESTEND_RPC": "wss://westend-rpc.polkadot.io"
+    }
+  }
 }

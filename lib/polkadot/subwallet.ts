@@ -42,7 +42,7 @@ export class SubWalletService {
         address: account.address,
         name: account.meta.name || 'Unnamed Account',
         source: account.meta.source,
-        type: account.type
+        type: account.type || 'sr25519'
       }));
     } catch (error) {
       console.error('Failed to get accounts:', error);
@@ -94,6 +94,10 @@ export class SubWalletService {
     try {
       const signer = await this.getSigner(address);
       
+      if (!signer || !signer.signRaw) {
+        throw new Error('Signer no disponible');
+      }
+      
       const signature = await signer.signRaw({
         address,
         data: transaction,
@@ -114,7 +118,7 @@ export class SubWalletService {
       }
 
       const accountInfo = await this.api.query.system.account(address);
-      const balance = accountInfo.data.free.toString();
+      const balance = (accountInfo as any).data?.free?.toString() || '0';
       
       return balance;
     } catch (error) {

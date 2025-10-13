@@ -3,11 +3,12 @@ import { CONTEXT7_CONFIG } from '@/lib/context7/config';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { libraryId: string } }
+  { params }: { params: Promise<{ libraryId: string }> }
 ) {
+  const { libraryId } = await params;
+  
   try {
     const { searchParams } = new URL(request.url);
-    const { libraryId } = params;
     
     const type = searchParams.get('type') || 'txt';
     const tokens = searchParams.get('tokens') || CONTEXT7_CONFIG.defaultTokens.toString();
@@ -45,7 +46,7 @@ export async function GET(
     
     const fallbackContent = `# Documentación no disponible
 
-No se pudo cargar la documentación para ${params.libraryId}. Esto puede deberse a problemas de conectividad o configuración de la API.
+No se pudo cargar la documentación para ${libraryId}. Esto puede deberse a problemas de conectividad o configuración de la API.
 
 **Posibles soluciones:**
 - Verificar la conexión a internet

@@ -28,6 +28,7 @@ export async function disconnectApi() {
   if (api) {
     await api.disconnect();
     api = null;
+  }
 }
 
 export async function getApiInfo() {

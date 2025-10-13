@@ -5,6 +5,7 @@ import { WalletProvider } from '@/components/wallet/WalletProvider'
 import { Navbar } from '@/components/navigation/Navbar'
 import ChatBot from '@/components/chat/ChatBot'
 import { Footer } from '@/components/navigation/Footer'
+import { ServiceWorker } from '@/components/ServiceWorker'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -63,23 +64,6 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16x16.png" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js')
-                    .then(function(registration) {
-                      console.log('SW registered: ', registration);
-                    })
-                    .catch(function(registrationError) {
-                      console.log('SW registration failed: ', registrationError);
-                    });
-                });
-              }
-            `,
-          }}
-        />
       </head>
       <body className={inter.className}>
         <WalletProvider>
@@ -89,6 +73,7 @@ export default function RootLayout({
         </main>
           <Footer />
           <ChatBot />
+          <ServiceWorker />
         </WalletProvider>
       </body>
     </html>

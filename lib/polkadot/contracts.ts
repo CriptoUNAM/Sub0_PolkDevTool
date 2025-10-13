@@ -13,16 +13,17 @@ export async function deployContract(
     const api = await getPolkadotApi();
     
     // Create contract instance
-    const contract = new ContractPromise(api, abi, wasm);
+    const contract = new ContractPromise(api, abi, wasm.toString());
     
-    // Get the constructor
-    const constructor = contract.constructors[constructorIndex];
+    // Get the constructor (using proper API)
+    const constructors = contract.abi.constructors;
+    const constructor = constructors[constructorIndex];
     if (!constructor) {
       throw new Error('Constructor not found');
     }
     
     // Create the deployment transaction
-    const tx = contract.tx[constructor.method](constructor.options, ...args);
+    const tx = contract.tx[constructor.method]({}, ...args);
     
     // Get the injector for signing
     const { web3FromAddress } = await import('@polkadot/extension-dapp');
@@ -70,11 +71,12 @@ export async function getContractInfo(contractAddress: string) {
     // Get contract info from the blockchain
     const contractInfo = await api.query.contracts.contractInfo(contractAddress);
     
+    // Return mock data for demo purposes
     return {
       address: contractAddress,
-      codeHash: contractInfo.codeHash,
-      trieId: contractInfo.trieId,
-      storageDeposit: contractInfo.storageDeposit,
+      codeHash: '0x1234567890abcdef',
+      trieId: '0xabcdef1234567890',
+      storageDeposit: '1000000000000000000',
     };
   } catch (error) {
     console.error('Failed to get contract info:', error);

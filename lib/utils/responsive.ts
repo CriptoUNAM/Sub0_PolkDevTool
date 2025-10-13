@@ -92,7 +92,7 @@ export function getTypographyClasses(
 export function getGridClasses(
   cols: Partial<Record<keyof typeof RESPONSIVE_CONFIG.breakpoints, number>> = {}
 ): string {
-  const classes = [];
+  const classes: string[] = [];
   
   Object.entries(cols).forEach(([breakpoint, colCount]) => {
     if (colCount) {
@@ -132,7 +132,7 @@ export function getFlexClasses(
 export function getVisibilityClasses(
   visible: Partial<Record<keyof typeof RESPONSIVE_CONFIG.breakpoints, boolean>> = {}
 ): string {
-  const classes = [];
+  const classes: string[] = [];
   
   Object.entries(visible).forEach(([breakpoint, isVisible]) => {
     if (isVisible !== undefined) {
@@ -149,7 +149,7 @@ export function getVisibilityClasses(
 export function getWidthClasses(
   width: Partial<Record<keyof typeof RESPONSIVE_CONFIG.breakpoints, string>> = {}
 ): string {
-  const classes = [];
+  const classes: string[] = [];
   
   Object.entries(width).forEach(([breakpoint, widthValue]) => {
     if (widthValue) {
@@ -166,7 +166,7 @@ export function getWidthClasses(
 export function getHeightClasses(
   height: Partial<Record<keyof typeof RESPONSIVE_CONFIG.breakpoints, string>> = {}
 ): string {
-  const classes = [];
+  const classes: string[] = [];
   
   Object.entries(height).forEach(([breakpoint, heightValue]) => {
     if (heightValue) {
@@ -213,7 +213,7 @@ export function matchesBreakpoint(
  * Get responsive container classes
  */
 export function getContainerClasses(
-  maxWidth: keyof typeof RESPONSIVE_CONFIG.breakpoints = '7xl',
+  maxWidth: keyof typeof RESPONSIVE_CONFIG.breakpoints = 'xl',
   padding: keyof typeof RESPONSIVE_CONFIG.spacing = 'md'
 ): string {
   return `max-w-${maxWidth} mx-auto ${getSpacingClasses(padding, 'x')}`;
