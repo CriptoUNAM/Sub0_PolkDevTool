@@ -8,6 +8,13 @@
       "maxDuration": 30
     }
   },
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_PASEO_RPC": "wss://paseo.rpc.amforc.com",
+      "NEXT_PUBLIC_ROCCO_RPC": "wss://rococo-rpc.polkadot.io",
+      "NEXT_PUBLIC_WESTEND_RPC": "wss://westend-rpc.polkadot.io"
+    }
+  },
   "headers": [
     {
       "source": "/sw.js",
@@ -51,12 +58,5 @@
       "destination": "/test"
     }
   ],
-  "regions": ["iad1"],
-  "build": {
-    "env": {
-      "NEXT_PUBLIC_PASEO_RPC": "wss://paseo.rpc.amforc.com",
-      "NEXT_PUBLIC_ROCCO_RPC": "wss://rococo-rpc.polkadot.io",
-      "NEXT_PUBLIC_WESTEND_RPC": "wss://westend-rpc.polkadot.io"
-    }
-  }
+  "regions": ["iad1"]
 }

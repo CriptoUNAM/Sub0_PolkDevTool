@@ -2,17 +2,21 @@ import { useState, useEffect } from 'react';
 
 export function useResponsive() {
   const [screenSize, setScreenSize] = useState({
-    width: 0,
-    height: 0,
+    width: 1024, // Default desktop width for SSR
+    height: 768, // Default desktop height for SSR
     isMobile: false,
     isTablet: false,
-    isDesktop: false,
+    isDesktop: true, // Default to desktop for SSR
     isLargeDesktop: false
   });
+
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     // Check if we're in browser environment
     if (typeof window === 'undefined') return;
+
+    setIsClient(true);
 
     const handleResize = () => {
       const width = window.innerWidth;
@@ -38,11 +42,11 @@ export function useResponsive() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  return screenSize;
+  return { ...screenSize, isClient };
 }
 
 export function useBreakpoint() {
-  const { isMobile, isTablet, isDesktop, isLargeDesktop } = useResponsive();
+  const { isMobile, isTablet, isDesktop, isLargeDesktop, isClient } = useResponsive();
   
   return {
     isMobile,
@@ -51,6 +55,7 @@ export function useBreakpoint() {
     isLargeDesktop,
     isSmallScreen: isMobile,
     isMediumScreen: isTablet,
-    isLargeScreen: isDesktop || isLargeDesktop
+    isLargeScreen: isDesktop || isLargeDesktop,
+    isClient
   };
 }

@@ -1,343 +1,479 @@
 'use client';
 
-import { useState } from 'react';
-
-// Force dynamic rendering to avoid SSR issues
-export const dynamic = 'force-dynamic';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { NeuralBackground } from '@/components/backgrounds/NeuralBackground';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 import { 
   Bug, 
+  Search, 
   AlertTriangle, 
-  CheckCircle, 
-  ExternalLink,
+  CheckCircle,
+  ArrowLeft,
+  RefreshCw,
   Copy,
-  Check,
-  Lightbulb,
-  Shield,
-  Zap
+  Download,
+  Code,
+  Zap,
+  FileText,
+  Lightbulb
 } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { Textarea } from '@/components/ui/Textarea';
-import { NeuralBackground } from '@/components/backgrounds/NeuralBackground';
+import Link from 'next/link';
 
-const EXAMPLE_ERRORS = [
-  {
-    name: 'Error de compilación - Importación faltante',
-    error: `error[E0433]: failed to resolve: use of undeclared type or module \`ink\`
-  --> src/lib.rs:1:1
-   |
- 1 | use ink::prelude::*;
-   |     ^^^ use of undeclared type or module \`ink\`
-   |
-   = note: this error originates in the macro \`ink::contract\` (in Nightly builds, run with -Z macro-backtrace for more info)`
-  },
-  {
-    name: 'Error de runtime - Balance insuficiente',
-    error: `Error: Insufficient balance for transfer
-    at Psp22Token::transfer (contract.rs:45:9)
-    at caller::execute (runtime.rs:123:15)
-    at runtime::execute (runtime.rs:456:20)`
-  },
-  {
-    name: 'Error de deployment - Gas insuficiente',
-    error: `Transaction failed: Gas limit exceeded
-    Contract deployment requires 2,500,000 gas units
-    Available gas: 2,000,000 gas units
-    Please increase gas limit or optimize contract code`
-  }
-];
+interface DebugIssue {
+  id: string;
+  type: 'error' | 'warning' | 'info';
+  message: string;
+  line?: number;
+  column?: number;
+  suggestion?: string;
+  severity: 'low' | 'medium' | 'high';
+}
 
 export default function DebugPage() {
-  const [errorMessage, setErrorMessage] = useState('');
-  const [code, setCode] = useState('');
-  const [context, setContext] = useState('');
-  const [debugResult, setDebugResult] = useState('');
-  const [isDebugging, setIsDebugging] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+  const [codeInput, setCodeInput] = useState('');
+  const [debugResults, setDebugResults] = useState<DebugIssue[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold mb-4">Debug</h1>
+          <p className="text-gray-400">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleDebug = async () => {
-    if (!errorMessage.trim()) return;
-    
-    setIsDebugging(true);
-    setDebugResult('');
+    if (!codeInput.trim() || isAnalyzing) return;
 
-    try {
-      const response = await fetch('/api/debug', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+    setIsAnalyzing(true);
+    setDebugResults([]);
+
+    // Simulate debug analysis
+    setTimeout(() => {
+      const mockIssues: DebugIssue[] = [
+        {
+          id: '1',
+          type: 'error',
+          message: 'Variable "value" is not defined',
+          line: 15,
+          column: 8,
+          suggestion: 'Declare the variable before using it: let value: i32 = 0;',
+          severity: 'high'
         },
-        body: JSON.stringify({
-          errorMessage,
-          code: code || undefined,
-          context: context || undefined,
-        }),
-      });
+        {
+          id: '2',
+          type: 'warning',
+          message: 'Unused import: std::collections::HashMap',
+          line: 2,
+          column: 1,
+          suggestion: 'Remove unused import or use it in your code',
+          severity: 'medium'
+        },
+        {
+          id: '3',
+          type: 'info',
+          message: 'Consider adding error handling for external calls',
+          line: 25,
+          column: 12,
+          suggestion: 'Wrap external calls in Result<T, E> for better error handling',
+          severity: 'low'
+        },
+        {
+          id: '4',
+          type: 'warning',
+          message: 'Function "calculate" could panic on division by zero',
+          line: 30,
+          column: 15,
+          suggestion: 'Add a check: if divisor == 0 { return Err("Division by zero"); }',
+          severity: 'medium'
+        }
+      ];
 
-      if (!response.ok) {
-        throw new Error('Failed to debug error');
-      }
+      setDebugResults(mockIssues);
+      setIsAnalyzing(false);
+    }, 3000);
+  };
 
-      const reader = response.body?.getReader();
-      if (!reader) return;
+  const copyCode = () => {
+    navigator.clipboard.writeText(codeInput);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
+  };
 
-      let debugText = '';
+  const downloadCode = () => {
+    const blob = new Blob([codeInput], { type: 'text/rust' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'debug_code.rs';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = new TextDecoder().decode(value);
-        debugText += chunk;
-        setDebugResult(debugText);
-      }
-    } catch (error) {
-      console.error('Error debugging:', error);
-      alert('Error analizando el error. Por favor, intenta de nuevo.');
-    } finally {
-      setIsDebugging(false);
+  const getIssueIcon = (type: string) => {
+    switch (type) {
+      case 'error': return <AlertTriangle className="w-4 h-4 text-red-400" />;
+      case 'warning': return <AlertTriangle className="w-4 h-4 text-yellow-400" />;
+      case 'info': return <Lightbulb className="w-4 h-4 text-blue-400" />;
+      default: return <Bug className="w-4 h-4 text-gray-400" />;
     }
   };
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(errorMessage);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy error:', err);
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'high': return 'text-red-400 bg-red-400/20';
+      case 'medium': return 'text-yellow-400 bg-yellow-400/20';
+      case 'low': return 'text-blue-400 bg-blue-400/20';
+      default: return 'text-gray-400 bg-gray-400/20';
     }
   };
 
-  const handleExampleSelect = (exampleError: string) => {
-    setErrorMessage(exampleError);
+  const getSeverityText = (severity: string) => {
+    switch (severity) {
+      case 'high': return 'Alto';
+      case 'medium': return 'Medio';
+      case 'low': return 'Bajo';
+      default: return severity;
+    }
   };
+
+  const exampleCodes = [
+    {
+      title: 'Código con Errores',
+      description: 'Ejemplo de código con problemas comunes',
+      code: `#![cfg_attr(not(feature = "std"), no_std)]
+
+use ink_lang as ink;
+use std::collections::HashMap;
+
+#[ink::contract]
+pub mod my_contract {
+    #[ink(storage)]
+    pub struct MyContract {
+        balances: HashMap<AccountId, Balance>,
+    }
+
+    impl MyContract {
+        #[ink(constructor)]
+        pub fn new() -> Self {
+            Self {
+                balances: HashMap::new(),
+            }
+        }
+
+        #[ink(message)]
+        pub fn get_balance(&self, account: AccountId) -> Balance {
+            // Error: variable not defined
+            return value;
+        }
+
+        #[ink(message)]
+        pub fn transfer(&mut self, to: AccountId, amount: Balance) -> bool {
+            // Potential panic
+            let result = amount / 0;
+            true
+        }
+    }
+}`
+    },
+    {
+      title: 'Código con Warnings',
+      description: 'Código con advertencias de compilación',
+      code: `#[ink::contract]
+pub mod contract {
+    use ink_storage::traits::SpreadAllocate;
+    
+    #[ink(storage)]
+    pub struct Contract {
+        value: i32,
+    }
+    
+    impl Contract {
+        #[ink(constructor)]
+        pub fn new() -> Self {
+            Self { value: 0 }
+        }
+        
+        // Unused function
+        fn unused_function() -> i32 {
+            42
+        }
+        
+        #[ink(message)]
+        pub fn get_value(&self) -> i32 {
+            self.value
+        }
+    }
+}`
+    },
+    {
+      title: 'Código Limpio',
+      description: 'Ejemplo de código sin problemas',
+      code: `#[ink::contract]
+pub mod clean_contract {
+    use ink_storage::traits::SpreadAllocate;
+    
+    #[ink(storage)]
+    #[derive(SpreadAllocate)]
+    pub struct CleanContract {
+        value: i32,
+    }
+    
+    impl CleanContract {
+        #[ink(constructor)]
+        pub fn new(initial_value: i32) -> Self {
+            Self { value: initial_value }
+        }
+        
+        #[ink(message)]
+        pub fn get_value(&self) -> i32 {
+            self.value
+        }
+        
+        #[ink(message)]
+        pub fn set_value(&mut self, new_value: i32) -> Result<(), String> {
+            if new_value < 0 {
+                return Err("Value cannot be negative".to_string());
+            }
+            self.value = new_value;
+            Ok(())
+        }
+    }
+}`
+    }
+  ];
+
+  const errorCount = debugResults.filter(issue => issue.type === 'error').length;
+  const warningCount = debugResults.filter(issue => issue.type === 'warning').length;
+  const infoCount = debugResults.filter(issue => issue.type === 'info').length;
 
   return (
     <div className="min-h-screen relative overflow-hidden">
       <NeuralBackground />
       
-      <div className="relative z-10 pt-8 pb-16 px-4">
+      <div className="relative z-10 pt-16 pb-16 px-4">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-8"
+            transition={{ duration: 0.6 }}
+            className="mb-8"
           >
-            <div className="flex items-center justify-center mb-4">
-              <Bug className="w-8 h-8 text-red-400 mr-3" />
-              <h1 className="text-4xl font-bold gradient-text">Error Debugger</h1>
-            </div>
-            <p className="text-xl text-gray-300">
-              Analiza errores de compilación y runtime con IA
-            </p>
+            <Link href="/" className="inline-flex items-center text-purple-400 hover:text-purple-300 mb-4">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Volver al inicio
+            </Link>
+            <h1 className="text-4xl font-bold text-white mb-2 flex items-center">
+              <Bug className="w-8 h-8 mr-3 text-purple-400" />
+              Debug Assistant
+            </h1>
+            <p className="text-gray-400">Encuentra y corrige errores en tu código</p>
           </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Input Panel */}
+            {/* Code Input */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <Card className="h-full">
+              <Card className="p-6 bg-slate-800/50 border-slate-700">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold flex items-center">
-                    <AlertTriangle className="w-5 h-5 mr-2 text-red-400" />
-                    Error a analizar
+                  <h2 className="text-xl font-semibold text-white flex items-center">
+                    <Code className="w-5 h-5 mr-2 text-purple-400" />
+                    Código a Analizar
                   </h2>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleCopy}
-                  >
-                    {copied ? (
-                      <Check className="w-4 h-4 text-green-400" />
-                    ) : (
-                      <Copy className="w-4 h-4" />
-                    )}
-                  </Button>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="secondary"
+                      onClick={copyCode}
+                      className="flex items-center"
+                    >
+                      {copiedCode ? (
+                        <>
+                          <Zap className="w-4 h-4 mr-2" />
+                          Copiado
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4 mr-2" />
+                          Copiar
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      onClick={downloadCode}
+                      className="flex items-center"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Descargar
+                    </Button>
+                  </div>
                 </div>
                 
                 <div className="space-y-4">
-                  <Textarea
-                    label="Mensaje de error"
-                    placeholder="Pega el mensaje de error completo aquí..."
-                    value={errorMessage}
-                    onChange={(e) => setErrorMessage(e.target.value)}
-                    rows={8}
-                    className="font-mono text-sm"
-                  />
-                  
-                  <Textarea
-                    label="Código relacionado (opcional)"
-                    placeholder="Pega el código que causó el error..."
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    rows={6}
-                    className="font-mono text-sm"
-                  />
-                  
-                  <Textarea
-                    label="Contexto adicional (opcional)"
-                    placeholder="Describe qué estabas intentando hacer..."
-                    value={context}
-                    onChange={(e) => setContext(e.target.value)}
-                    rows={3}
-                  />
-                  
                   <div>
-                    <p className="text-sm text-gray-400 mb-2">Ejemplos de errores:</p>
-                    <div className="space-y-2">
-                      {EXAMPLE_ERRORS.map((example, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handleExampleSelect(example.error)}
-                          className="block w-full text-left p-3 text-sm bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
-                        >
-                          <div className="font-medium">{example.name}</div>
-                          <div className="text-xs text-gray-400 mt-1">
-                            {example.error.split('\n')[0]}...
-                          </div>
-                        </button>
-                      ))}
-                    </div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Pega tu código aquí
+                    </label>
+                    <Textarea
+                      value={codeInput}
+                      onChange={(e) => setCodeInput(e.target.value)}
+                      placeholder="Pega aquí el código que quieres analizar..."
+                      className="min-h-[400px] font-mono text-sm"
+                      disabled={isAnalyzing}
+                    />
                   </div>
-                  
+
                   <Button
                     onClick={handleDebug}
-                    disabled={!errorMessage.trim() || isDebugging}
-                    className="w-full"
-                    size="lg"
+                    disabled={!codeInput.trim() || isAnalyzing}
+                    variant="primary"
+                    className="w-full flex items-center justify-center"
                   >
-                    {isDebugging ? (
+                    {isAnalyzing ? (
                       <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                         Analizando...
                       </>
                     ) : (
                       <>
-                        <Bug className="w-5 h-5 mr-2" />
-                        Analizar Error
+                        <Search className="w-4 h-4 mr-2" />
+                        Analizar Código
                       </>
                     )}
                   </Button>
                 </div>
               </Card>
+
+              {/* Example Codes */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="mt-6"
+              >
+                <h3 className="text-lg font-semibold text-white mb-4">Ejemplos de Código</h3>
+                <div className="space-y-3">
+                  {exampleCodes.map((example, index) => (
+                    <Button
+                      key={index}
+                      variant="secondary"
+                      className="w-full justify-start text-left h-auto p-4"
+                      onClick={() => setCodeInput(example.code)}
+                      disabled={isAnalyzing}
+                    >
+                      <div>
+                        <div className="flex items-center mb-1">
+                          <FileText className="w-4 h-4 mr-2 text-purple-400" />
+                          <span className="font-medium">{example.title}</span>
+                        </div>
+                        <p className="text-sm text-gray-400">{example.description}</p>
+                      </div>
+                    </Button>
+                  ))}
+                </div>
+              </motion.div>
             </motion.div>
 
-            {/* Output Panel */}
+            {/* Debug Results */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
             >
-              <Card className="h-full">
+              <Card className="p-6 bg-slate-800/50 border-slate-700 h-full">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold flex items-center">
-                    <CheckCircle className="w-5 h-5 mr-2 text-green-400" />
-                    Análisis del error
+                  <h2 className="text-xl font-semibold text-white flex items-center">
+                    <Bug className="w-5 h-5 mr-2 text-purple-400" />
+                    Resultados del Debug
                   </h2>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        const blob = new Blob([debugResult], { type: 'text/plain' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'debug-analysis.txt';
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                      }}
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  {debugResults.length > 0 && (
+                    <div className="flex items-center space-x-4 text-sm">
+                      {errorCount > 0 && <span className="text-red-400">{errorCount} errores</span>}
+                      {warningCount > 0 && <span className="text-yellow-400">{warningCount} warnings</span>}
+                      {infoCount > 0 && <span className="text-blue-400">{infoCount} info</span>}
+                    </div>
+                  )}
                 </div>
-                
-                <div className="h-96 overflow-y-auto">
-                  {debugResult ? (
-                    <div className="prose prose-invert max-w-none">
-                      <div className="whitespace-pre-wrap text-gray-300 leading-relaxed">
-                        {debugResult}
+
+                <div className="h-[500px] overflow-auto">
+                  {isAnalyzing ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <RefreshCw className="w-8 h-8 text-purple-400 animate-spin mx-auto mb-4" />
+                        <p className="text-gray-400">Analizando tu código...</p>
+                        <p className="text-sm text-gray-500 mt-2">Buscando errores y problemas</p>
+                      </div>
+                    </div>
+                  ) : debugResults.length === 0 ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <Bug className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-400">Los resultados aparecerán aquí</p>
+                        <p className="text-sm text-gray-500 mt-2">Analiza tu código para ver los problemas</p>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-center h-full text-gray-400">
-                      <div className="text-center">
-                        <Bug className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                        <p className="text-lg">El análisis aparecerá aquí</p>
-                        <p className="text-sm">Pega tu error y haz clic en "Analizar Error"</p>
-                      </div>
+                    <div className="space-y-4">
+                      {debugResults.map((issue) => (
+                        <motion.div
+                          key={issue.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="p-4 bg-slate-700/50 rounded-lg border-l-4 border-l-purple-500"
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-start">
+                              {getIssueIcon(issue.type)}
+                              <div className="ml-3">
+                                <p className="text-white font-medium">{issue.message}</p>
+                                {issue.line && (
+                                  <p className="text-sm text-gray-400 mt-1">
+                                    Línea {issue.line}, Columna {issue.column}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(issue.severity)}`}>
+                              {getSeverityText(issue.severity)}
+                            </span>
+                          </div>
+                          
+                          {issue.suggestion && (
+                            <div className="mt-3 p-3 bg-slate-800 rounded border border-slate-600">
+                              <div className="flex items-center mb-2">
+                                <Lightbulb className="w-4 h-4 text-yellow-400 mr-2" />
+                                <span className="text-sm font-medium text-yellow-400">Sugerencia:</span>
+                              </div>
+                              <p className="text-sm text-gray-300">{issue.suggestion}</p>
+                            </div>
+                          )}
+                        </motion.div>
+                      ))}
                     </div>
                   )}
                 </div>
               </Card>
             </motion.div>
           </div>
-
-          {/* Debugging Tips */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="mt-8"
-          >
-            <Card>
-              <h3 className="text-xl font-semibold mb-6 flex items-center">
-                <Lightbulb className="w-6 h-6 mr-2 text-yellow-400" />
-                Consejos para debugging efectivo
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="flex items-start">
-                  <Shield className="w-5 h-5 text-green-400 mr-3 mt-1" />
-                  <div>
-                    <h4 className="font-semibold mb-2">Errores de compilación</h4>
-                    <ul className="text-sm text-gray-400 space-y-1">
-                      <li>• Verifica las importaciones</li>
-                      <li>• Revisa la sintaxis de Rust</li>
-                      <li>• Asegúrate de usar ink! 5.0</li>
-                      <li>• Verifica los tipos de datos</li>
-                    </ul>
-                  </div>
-                </div>
-                
-                <div className="flex items-start">
-                  <Zap className="w-5 h-5 text-yellow-400 mr-3 mt-1" />
-                  <div>
-                    <h4 className="font-semibold mb-2">Errores de runtime</h4>
-                    <ul className="text-sm text-gray-400 space-y-1">
-                      <li>• Verifica los balances</li>
-                      <li>• Revisa los permisos</li>
-                      <li>• Comprueba los parámetros</li>
-                      <li>• Analiza la lógica de negocio</li>
-                    </ul>
-                  </div>
-                </div>
-                
-                <div className="flex items-start">
-                  <ExternalLink className="w-5 h-5 text-blue-400 mr-3 mt-1" />
-                  <div>
-                    <h4 className="font-semibold mb-2">Errores de deployment</h4>
-                    <ul className="text-sm text-gray-400 space-y-1">
-                      <li>• Verifica el gas disponible</li>
-                      <li>• Comprueba la conexión</li>
-                      <li>• Revisa los parámetros</li>
-                      <li>• Optimiza el código</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </motion.div>
         </div>
       </div>
     </div>

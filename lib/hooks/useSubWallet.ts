@@ -24,18 +24,20 @@ export function useSubWallet(): SubWalletInfo {
         if (typeof window === 'undefined') return;
 
         // Check localStorage for existing connection
-        const savedAccount = localStorage.getItem('polkadot-devkit-account');
-        const savedSource = localStorage.getItem('polkadot-devkit-wallet-source');
+        if (typeof window !== 'undefined' && window.localStorage) {
+          const savedAccount = localStorage.getItem('polkadot-devkit-account');
+          const savedSource = localStorage.getItem('polkadot-devkit-wallet-source');
         
-        if (savedAccount && savedSource) {
-          const isSubWallet = savedSource.toLowerCase().includes('subwallet');
-          setSubWalletInfo({
-            isAvailable: true,
-            isConnected: isSubWallet,
-            account: isSubWallet ? savedAccount : null,
-            source: isSubWallet ? savedSource : null,
-          });
-          return;
+          if (savedAccount && savedSource) {
+            const isSubWallet = savedSource.toLowerCase().includes('subwallet');
+            setSubWalletInfo({
+              isAvailable: true,
+              isConnected: isSubWallet,
+              account: isSubWallet ? savedAccount : null,
+              source: isSubWallet ? savedSource : null,
+            });
+            return;
+          }
         }
 
         // Check if SubWallet extension is available

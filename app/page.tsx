@@ -148,7 +148,7 @@ export default function HomePage() {
             </motion.div>
           </motion.div>
 
-          {/* LatinHack 2025 Project Info */}
+          {/* sub0 Hack 2025 Project Info */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -159,7 +159,7 @@ export default function HomePage() {
               <div className="text-center mb-6">
                 <div className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 mb-4">
                   <Rocket className="w-5 h-5 text-purple-400 mr-2" />
-                  <span className="text-sm font-medium text-purple-300">Proyecto LatinHack 2025</span>
+                  <span className="text-sm font-medium text-purple-300">Proyecto sub0 Hack 2025</span>
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-bold gradient-text mb-4">
                   Desarrollado para Polkadot y Paseo Testnet

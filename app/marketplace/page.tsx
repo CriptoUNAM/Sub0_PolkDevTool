@@ -1,640 +1,336 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { NeuralBackground } from '@/components/backgrounds/NeuralBackground';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { 
   Store, 
-  Star, 
+  Search, 
   Download, 
-  Eye, 
-  Filter, 
-  Search,
-  TrendingUp,
-  Users,
-  Clock,
-  Shield,
-  Zap,
+  Star,
+  ArrowLeft,
+  Filter,
+  Grid,
+  List,
   Code,
-  Heart,
-  Share2,
-  Tag,
-  Award,
-  FileText,
-  Copy,
-  Check
+  Zap,
+  Shield
 } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
-import { NeuralBackground } from '@/components/backgrounds/NeuralBackground';
-import { CONTRACT_TEMPLATES } from '@/lib/templates/contracts';
+import Link from 'next/link';
 
-// Función para obtener el código del contrato
-const getContractCode = (contractId: number): string => {
-  const templateMap: { [key: number]: string } = {
-    1: 'staking-pool', // Advanced Staking Pool
-    2: 'nft-marketplace', // NFT Marketplace  
-    3: 'dao-governance', // DAO Governance
-    4: 'defi-lending', // DeFi Lending Pool
-    5: 'cross-chain-bridge', // Cross-Chain Bridge
-    6: 'token-vesting', // Token Vesting
-  };
-  
-  const templateId = templateMap[contractId];
-  const template = CONTRACT_TEMPLATES.find(t => t.id === templateId);
-  return template?.code || `// Código del contrato ${contractId} no disponible`;
-};
-
-// Función para descargar archivo
-const downloadFile = (content: string, filename: string) => {
-  const blob = new Blob([content], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-};
-
-const MARKETPLACE_CONTRACTS = [
-  {
-    id: 1,
-    name: 'Advanced Staking Pool',
-    description: 'Contrato de staking con múltiples pools, recompensas compuestas y governance integrado',
-    author: 'PolkadotDev',
-    price: 0,
-    rating: 4.9,
-    downloads: 1247,
-    tags: ['staking', 'governance', 'defi'],
-    complexity: 'advanced',
-    features: ['Multi-pool', 'Compound rewards', 'Governance'],
-    lastUpdated: '2 days ago',
-    verified: true,
-    trending: true,
-    templateId: 'staking-pool',
-  },
-  {
-    id: 2,
-    name: 'NFT Marketplace',
-    description: 'Marketplace completo para NFTs con royalties, subastas y trading automático',
-    author: 'Web3Builder',
-    price: 0,
-    rating: 4.8,
-    downloads: 892,
-    tags: ['nft', 'marketplace', 'trading'],
-    complexity: 'advanced',
-    features: ['Royalties', 'Auctions', 'Auto-trading'],
-    lastUpdated: '1 week ago',
-    verified: true,
-    trending: false,
-    templateId: 'nft-marketplace',
-  },
-  {
-    id: 3,
-    name: 'DAO Governance',
-    description: 'Sistema de gobernanza DAO con votación por delegación y propuestas automáticas',
-    author: 'DAOExpert',
-    price: 0,
-    rating: 4.7,
-    downloads: 654,
-    tags: ['dao', 'governance', 'voting'],
-    complexity: 'intermediate',
-    features: ['Delegation', 'Auto-proposals', 'Quorum'],
-    lastUpdated: '3 days ago',
-    verified: true,
-    trending: true,
-    templateId: 'dao-governance',
-  },
-  {
-    id: 4,
-    name: 'DeFi Lending Pool',
-    description: 'Pool de préstamos descentralizado con tasas dinámicas y liquidación automática',
-    author: 'DeFiMaster',
-    price: 0,
-    rating: 4.6,
-    downloads: 423,
-    tags: ['defi', 'lending', 'liquidation'],
-    complexity: 'advanced',
-    features: ['Dynamic rates', 'Auto-liquidation', 'Collateral'],
-    lastUpdated: '5 days ago',
-    verified: false,
-    trending: false,
-    templateId: 'defi-lending',
-  },
-  {
-    id: 5,
-    name: 'Cross-Chain Bridge',
-    description: 'Bridge para transferencias entre chains con validación por múltiples signers',
-    author: 'BridgeBuilder',
-    price: 0,
-    rating: 4.5,
-    downloads: 312,
-    tags: ['bridge', 'cross-chain', 'security'],
-    complexity: 'advanced',
-    features: ['Multi-signer', 'Cross-chain', 'Security'],
-    lastUpdated: '1 week ago',
-    verified: true,
-    trending: false,
-    templateId: 'cross-chain-bridge',
-  },
-  {
-    id: 6,
-    name: 'Token Vesting',
-    description: 'Sistema de vesting de tokens con múltiples schedules y cliff periods',
-    author: 'TokenMaster',
-    price: 0,
-    rating: 4.4,
-    downloads: 567,
-    tags: ['vesting', 'tokens', 'schedule'],
-    complexity: 'intermediate',
-    features: ['Multi-schedule', 'Cliff periods', 'Linear release'],
-    lastUpdated: '4 days ago',
-    verified: true,
-    trending: false,
-    templateId: 'token-vesting',
-  },
-];
-
-const CATEGORIES = [
-  { value: 'all', label: 'Todas las categorías' },
-  { value: 'staking', label: 'Staking' },
-  { value: 'nft', label: 'NFTs' },
-  { value: 'dao', label: 'DAO' },
-  { value: 'defi', label: 'DeFi' },
-  { value: 'bridge', label: 'Bridge' },
-  { value: 'vesting', label: 'Vesting' },
-];
-
-const COMPLEXITY_LEVELS = [
-  { value: 'all', label: 'Todos los niveles' },
-  { value: 'beginner', label: 'Principiante' },
-  { value: 'intermediate', label: 'Intermedio' },
-  { value: 'advanced', label: 'Avanzado' },
-];
+interface Template {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  downloads: number;
+  rating: number;
+  tags: string[];
+  price: 'Free' | 'Premium';
+  author: string;
+  lastUpdated: string;
+}
 
 export default function MarketplacePage() {
+  const [isClient, setIsClient] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedComplexity, setSelectedComplexity] = useState('all');
-  const [sortBy, setSortBy] = useState('trending');
-  const [downloading, setDownloading] = useState<number | null>(null);
-  const [copied, setCopied] = useState<number | null>(null);
-  const [showCodeModal, setShowCodeModal] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // Función para manejar la descarga
-  const handleDownload = async (contract: any) => {
-    setDownloading(contract.id);
-    
-    try {
-      const code = getContractCode(contract.id);
-      const filename = `${contract.name.toLowerCase().replace(/\s+/g, '-')}.rs`;
-      
-      // Simular delay para mostrar loading
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      downloadFile(code, filename);
-      
-      // Actualizar contador de descargas (simulado)
-      contract.downloads += 1;
-      
-    } catch (error) {
-      console.error('Error downloading contract:', error);
-    } finally {
-      setDownloading(null);
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold mb-4">Marketplace</h1>
+          <p className="text-gray-400">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const templates: Template[] = [
+    {
+      id: '1',
+      title: 'ERC-20 Token Template',
+      description: 'Plantilla completa para crear tokens ERC-20 en Polkadot',
+      category: 'Tokens',
+      downloads: 1234,
+      rating: 4.8,
+      tags: ['token', 'erc20', 'defi'],
+      price: 'Free',
+      author: 'Polkadot Team',
+      lastUpdated: '2024-01-15'
+    },
+    {
+      id: '2',
+      title: 'NFT Marketplace',
+      description: 'Marketplace completo para NFTs con funcionalidades avanzadas',
+      category: 'NFT',
+      downloads: 856,
+      rating: 4.6,
+      tags: ['nft', 'marketplace', 'web3'],
+      price: 'Premium',
+      author: 'Web3 Dev',
+      lastUpdated: '2024-01-10'
+    },
+    {
+      id: '3',
+      title: 'DAO Governance',
+      description: 'Sistema de gobernanza descentralizada para DAOs',
+      category: 'Governance',
+      downloads: 432,
+      rating: 4.9,
+      tags: ['dao', 'governance', 'voting'],
+      price: 'Free',
+      author: 'DAO Builder',
+      lastUpdated: '2024-01-12'
+    },
+    {
+      id: '4',
+      title: 'DeFi Lending Protocol',
+      description: 'Protocolo de préstamos descentralizados',
+      category: 'DeFi',
+      downloads: 678,
+      rating: 4.7,
+      tags: ['defi', 'lending', 'protocol'],
+      price: 'Premium',
+      author: 'DeFi Master',
+      lastUpdated: '2024-01-08'
+    },
+    {
+      id: '5',
+      title: 'Cross-chain Bridge',
+      description: 'Puente para transferir activos entre cadenas',
+      category: 'Bridge',
+      downloads: 234,
+      rating: 4.5,
+      tags: ['bridge', 'cross-chain', 'interoperability'],
+      price: 'Free',
+      author: 'Bridge Builder',
+      lastUpdated: '2024-01-05'
+    },
+    {
+      id: '6',
+      title: 'Staking Pool',
+      description: 'Pool de staking con recompensas automáticas',
+      category: 'Staking',
+      downloads: 567,
+      rating: 4.8,
+      tags: ['staking', 'rewards', 'pool'],
+      price: 'Premium',
+      author: 'Staking Pro',
+      lastUpdated: '2024-01-03'
     }
-  };
+  ];
 
-  // Función para copiar código al portapapeles
-  const handleCopyCode = async (contract: any) => {
-    try {
-      const code = getContractCode(contract.id);
-      await navigator.clipboard.writeText(code);
-      setCopied(contract.id);
-      setTimeout(() => setCopied(null), 2000);
-    } catch (error) {
-      console.error('Error copying code:', error);
-    }
-  };
+  const categories = ['all', 'Tokens', 'NFT', 'Governance', 'DeFi', 'Bridge', 'Staking'];
 
-  const filteredContracts = MARKETPLACE_CONTRACTS.filter(contract => {
-    const matchesSearch = contract.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        contract.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        contract.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = selectedCategory === 'all' || contract.tags.includes(selectedCategory);
-    const matchesComplexity = selectedComplexity === 'all' || contract.complexity === selectedComplexity;
-    
-    return matchesSearch && matchesCategory && matchesComplexity;
+  const filteredTemplates = templates.filter(template => {
+    const matchesSearch = template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         template.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         template.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesCategory = selectedCategory === 'all' || template.category === selectedCategory;
+    return matchesSearch && matchesCategory;
   });
-
-  const getComplexityColor = (complexity: string) => {
-    switch (complexity) {
-      case 'beginner': return 'text-green-400 bg-green-400/20';
-      case 'intermediate': return 'text-yellow-400 bg-yellow-400/20';
-      case 'advanced': return 'text-red-400 bg-red-400/20';
-      default: return 'text-gray-400 bg-gray-400/20';
-    }
-  };
-
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'staking': return '💰';
-      case 'nft': return '🖼️';
-      case 'dao': return '🏛️';
-      case 'defi': return '💱';
-      case 'bridge': return '🌉';
-      case 'vesting': return '⏰';
-      default: return '📄';
-    }
-  };
 
   return (
     <div className="min-h-screen relative overflow-hidden">
       <NeuralBackground />
       
-      <div className="relative z-10 pt-4 sm:pt-8 pb-8 sm:pb-16 px-4">
+      <div className="relative z-10 pt-16 pb-16 px-4">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-8 sm:mb-12"
+            transition={{ duration: 0.6 }}
+            className="mb-8"
           >
-            <div className="flex items-center justify-center mb-4 sm:mb-6">
-              <Store className="w-8 h-8 sm:w-12 sm:h-12 text-purple-400 mr-3 sm:mr-4" />
-              <h1 className="text-3xl sm:text-5xl font-bold gradient-text">Contract Marketplace</h1>
-            </div>
-            <p className="text-lg sm:text-2xl text-gray-300 mb-6 sm:mb-8">
-              Descubre, descarga y despliega contratos inteligentes pre-construidos
-            </p>
+            <Link href="/" className="inline-flex items-center text-purple-400 hover:text-purple-300 mb-4">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Volver al inicio
+            </Link>
+            <h1 className="text-4xl font-bold text-white mb-2 flex items-center">
+              <Store className="w-8 h-8 mr-3 text-purple-400" />
+              Marketplace
+            </h1>
+            <p className="text-gray-400">Descubre y descarga plantillas para tu proyecto</p>
           </motion.div>
 
-          {/* Filters */}
+          {/* Search and Filters */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="mb-6 sm:mb-8"
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mb-8"
           >
-            <Card className="p-4 sm:p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    placeholder="Buscar contratos..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                
+            <div className="flex flex-col lg:flex-row gap-4 mb-6">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar plantillas..."
+                  className="pl-10"
+                />
+              </div>
+              <div className="flex gap-2">
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                  className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-purple-500 focus:outline-none"
                 >
-                  {CATEGORIES.map(category => (
-                    <option key={category.value} value={category.value} className="bg-slate-900">
-                      {category.label}
+                  {categories.map(category => (
+                    <option key={category} value={category}>
+                      {category === 'all' ? 'Todas las categorías' : category}
                     </option>
                   ))}
                 </select>
-                
-                <select
-                  value={selectedComplexity}
-                  onChange={(e) => setSelectedComplexity(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-                >
-                  {COMPLEXITY_LEVELS.map(level => (
-                    <option key={level.value} value={level.value} className="bg-slate-900">
-                      {level.label}
-                    </option>
-                  ))}
-                </select>
-                
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-                >
-                  <option value="trending" className="bg-slate-900">Tendencia</option>
-                  <option value="rating" className="bg-slate-900">Calificación</option>
-                  <option value="downloads" className="bg-slate-900">Descargas</option>
-                  <option value="newest" className="bg-slate-900">Más recientes</option>
-                </select>
-                
                 <Button
-                  onClick={() => {
-                    setSearchTerm('');
-                    setSelectedCategory('all');
-                    setSelectedComplexity('all');
-                    setSortBy('trending');
-                  }}
                   variant="secondary"
-                  className="w-full"
+                  onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                  className="px-4"
                 >
-                  <Filter className="w-4 h-4 mr-2" />
-                  Limpiar
+                  {viewMode === 'grid' ? <List className="w-4 h-4" /> : <Grid className="w-4 h-4" />}
                 </Button>
               </div>
-            </Card>
+            </div>
+
+            {/* Category Filters */}
+            <div className="flex flex-wrap gap-2">
+              {categories.map(category => (
+                <Button
+                  key={category}
+                  variant={selectedCategory === category ? "primary" : "secondary"}
+                  onClick={() => setSelectedCategory(category)}
+                  className="text-sm"
+                >
+                  {category === 'all' ? 'Todas' : category}
+                </Button>
+              ))}
+            </div>
           </motion.div>
 
-          {/* Contracts Grid */}
+          {/* Templates Grid */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className={viewMode === 'grid' 
+              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
+              : "space-y-4"
+            }
           >
-            {filteredContracts.map((contract, index) => (
+            {filteredTemplates.map((template, index) => (
               <motion.div
-                key={contract.id}
+                key={template.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                whileHover={{ y: -5 }}
+                transition={{ duration: 0.6, delay: 0.1 * index }}
               >
-                <Card className="h-full cursor-pointer group">
-                  <div className="p-4 sm:p-6">
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center">
-                        <span className="text-xl sm:text-2xl mr-2 sm:mr-3">
-                          {getCategoryIcon(contract.tags[0])}
+                <Card className={`p-6 bg-slate-800/50 border-slate-700 hover:border-purple-500/50 transition-colors ${
+                  viewMode === 'list' ? 'flex items-center space-x-6' : ''
+                }`}>
+                  {viewMode === 'grid' ? (
+                    <>
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <h3 className="text-xl font-semibold text-white mb-2">{template.title}</h3>
+                          <p className="text-gray-400 text-sm mb-3">{template.description}</p>
+                        </div>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          template.price === 'Free' 
+                            ? 'bg-green-400/20 text-green-400' 
+                            : 'bg-yellow-400/20 text-yellow-400'
+                        }`}>
+                          {template.price}
                         </span>
-                        <div>
-                          <h3 className="text-lg sm:text-xl font-semibold mb-1 flex items-center">
-                            {contract.name}
-                            {contract.verified && (
-                              <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-green-400 ml-1 sm:ml-2" />
-                            )}
-                            {contract.trending && (
-                              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-orange-400 ml-1 sm:ml-2" />
-                            )}
-                          </h3>
-                          <p className="text-xs sm:text-sm text-gray-400">por {contract.author}</p>
+                      </div>
+
+                      <div className="mb-4">
+                        <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
+                          <span>Por {template.author}</span>
+                          <span>{template.lastUpdated}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex items-center">
+                            <Download className="w-4 h-4 mr-1" />
+                            {template.downloads}
+                          </div>
+                          <div className="flex items-center">
+                            <Star className="w-4 h-4 mr-1 text-yellow-400" />
+                            {template.rating}
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getComplexityColor(contract.complexity)}`}>
-                          {contract.complexity}
-                        </span>
-                        {contract.trending && (
-                          <span className="px-2 py-1 bg-orange-400/20 text-orange-400 rounded-full text-xs font-medium">
-                            Trending
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {/* Description */}
-                    <p className="text-gray-400 mb-3 sm:mb-4 text-xs sm:text-sm leading-relaxed">
-                      {contract.description}
-                    </p>
-                    
-                    {/* Features */}
-                    <div className="mb-4">
-                      <div className="flex flex-wrap gap-2">
-                        {contract.features.map((feature, idx) => (
-                          <span key={idx} className="px-1 sm:px-2 py-1 bg-white/10 rounded text-xs text-gray-300">
-                            {feature}
+
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {template.tags.map(tag => (
+                          <span key={tag} className="px-2 py-1 bg-slate-700 text-gray-300 text-xs rounded">
+                            {tag}
                           </span>
                         ))}
                       </div>
-                    </div>
-                    
-                    {/* Tags */}
-                    <div className="mb-4">
-                      <div className="flex flex-wrap gap-2">
-                        {contract.tags.map((tag, idx) => (
-                          <span key={idx} className="px-1 sm:px-2 py-1 bg-purple-400/20 text-purple-400 rounded text-xs">
-                            #{tag}
+
+                      <Button variant="primary" className="w-full flex items-center justify-center">
+                        <Download className="w-4 h-4 mr-2" />
+                        Descargar
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between mb-2">
+                          <h3 className="text-xl font-semibold text-white">{template.title}</h3>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            template.price === 'Free' 
+                              ? 'bg-green-400/20 text-green-400' 
+                              : 'bg-yellow-400/20 text-yellow-400'
+                          }`}>
+                            {template.price}
                           </span>
-                        ))}
+                        </div>
+                        <p className="text-gray-400 text-sm mb-3">{template.description}</p>
+                        <div className="flex items-center space-x-4 text-sm text-gray-400">
+                          <span>Por {template.author}</span>
+                          <span>{template.downloads} descargas</span>
+                          <div className="flex items-center">
+                            <Star className="w-4 h-4 mr-1 text-yellow-400" />
+                            {template.rating}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    
-                    {/* Stats */}
-                    <div className="flex items-center justify-between mb-3 sm:mb-4 text-xs sm:text-sm text-gray-400">
-                      <div className="flex items-center">
-                        <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 mr-1" />
-                        {contract.rating}
-                      </div>
-                      <div className="flex items-center">
-                        <Download className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400 mr-1" />
-                        {contract.downloads.toLocaleString()}
-                      </div>
-                      <div className="flex items-center">
-                        <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 mr-1" />
-                        {contract.lastUpdated}
-                      </div>
-                    </div>
-                    
-                    {/* Actions */}
-                    <div className="space-y-2">
-                      {/* Botones principales */}
-                      <div className="flex gap-2">
-                        <Button
-                          className="flex-1"
-                          size="sm"
-                          onClick={() => handleDownload(contract)}
-                          disabled={downloading === contract.id}
-                        >
-                          {downloading === contract.id ? (
-                            <>
-                              <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                              Descargando...
-                            </>
-                          ) : (
-                            <>
-                              <Download className="w-4 h-4 mr-2" />
-                              Descargar .rs
-                            </>
-                          )}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCopyCode(contract)}
-                        >
-                          {copied === contract.id ? (
-                            <Check className="w-4 h-4 text-green-400" />
-                          ) : (
-                            <Copy className="w-4 h-4" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      
-                      {/* Botones secundarios */}
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => setShowCodeModal(contract.id)}
-                        >
-                          <FileText className="w-4 h-4 mr-2" />
-                          Ver Código
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                        >
-                          <Heart className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                        >
-                          <Share2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+                      <Button variant="primary" className="flex items-center">
+                        <Download className="w-4 h-4 mr-2" />
+                        Descargar
+                      </Button>
+                    </>
+                  )}
                 </Card>
               </motion.div>
             ))}
           </motion.div>
 
-          {filteredContracts.length === 0 && (
+          {filteredTemplates.length === 0 && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="text-center py-12"
             >
-              <div className="text-gray-400">
-                <Store className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p className="text-xl">No se encontraron contratos</p>
-                <p className="text-sm">Intenta ajustar los filtros de búsqueda</p>
-              </div>
+              <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-white mb-2">No se encontraron plantillas</h3>
+              <p className="text-gray-400">Intenta con otros términos de búsqueda</p>
             </motion.div>
           )}
-
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="mt-12"
-          >
-            <Card>
-              <h3 className="text-2xl font-semibold text-center mb-8 gradient-text">
-                Estadísticas del Marketplace
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-purple-400 mb-2">
-                    {MARKETPLACE_CONTRACTS.length}+
-                  </div>
-                  <div className="text-gray-400">Contratos Disponibles</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-blue-400 mb-2">
-                    {MARKETPLACE_CONTRACTS.reduce((sum, contract) => sum + contract.downloads, 0).toLocaleString()}+
-                  </div>
-                  <div className="text-gray-400">Total Descargas</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-green-400 mb-2">
-                    {MARKETPLACE_CONTRACTS.filter(c => c.verified).length}
-                  </div>
-                  <div className="text-gray-400">Contratos Verificados</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-yellow-400 mb-2">
-                    {MARKETPLACE_CONTRACTS.filter(c => c.trending).length}
-                  </div>
-                  <div className="text-gray-400">En Tendencia</div>
-                </div>
-              </div>
-            </Card>
-          </motion.div>
         </div>
       </div>
-
-      {/* Modal para mostrar código */}
-      {showCodeModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="bg-slate-900 rounded-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden"
-          >
-            <div className="p-6 border-b border-white/10">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-2xl font-bold text-white">
-                    {MARKETPLACE_CONTRACTS.find(c => c.id === showCodeModal)?.name}
-                  </h3>
-                  <p className="text-gray-400">
-                    Código fuente del contrato
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      const contract = MARKETPLACE_CONTRACTS.find(c => c.id === showCodeModal);
-                      if (contract) handleCopyCode(contract);
-                    }}
-                  >
-                    {copied === showCodeModal ? (
-                      <Check className="w-4 h-4 text-green-400" />
-                    ) : (
-                      <Copy className="w-4 h-4" />
-                    )}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowCodeModal(null)}
-                  >
-                    ✕
-                  </Button>
-                </div>
-              </div>
-            </div>
-            
-            <div className="p-6 overflow-auto max-h-[60vh]">
-              <pre className="text-sm text-gray-300 bg-slate-800 p-4 rounded-lg overflow-auto">
-                <code>{getContractCode(showCodeModal)}</code>
-              </pre>
-            </div>
-            
-            <div className="p-6 border-t border-white/10">
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => {
-                    const contract = MARKETPLACE_CONTRACTS.find(c => c.id === showCodeModal);
-                    if (contract) handleDownload(contract);
-                  }}
-                  className="flex-1"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Descargar Archivo .rs
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => setShowCodeModal(null)}
-                >
-                  Cerrar
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      )}
     </div>
   );
 }

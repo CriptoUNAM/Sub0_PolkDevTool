@@ -1,344 +1,349 @@
 'use client';
 
-import { useState } from 'react';
-
-// Force dynamic rendering
-export const dynamic = 'force-dynamic';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Brain, Sparkles, Download, Play, Copy, Check } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { Textarea } from '@/components/ui/Textarea';
-import { Select } from '@/components/ui/Select';
-import { CodeEditor } from '@/components/code/CodeEditor';
 import { NeuralBackground } from '@/components/backgrounds/NeuralBackground';
-import { WalletConnect } from '@/components/wallet/WalletConnect';
-
-const CONTRACT_TYPES = [
-  { value: 'token', label: 'Token (PSP-22)' },
-  { value: 'nft', label: 'NFT (PSP-34)' },
-  { value: 'governance', label: 'Governance' },
-  { value: 'staking', label: 'Staking' },
-  { value: 'defi', label: 'DeFi' },
-  { value: 'custom', label: 'Personalizado' }
-];
-
-const EXAMPLE_PROMPTS = [
-  'Crear un token ERC-20 con funcionalidad de staking y recompensas del 10% APY',
-  'Implementar un contrato de NFT con royalties para artistas',
-  'Desarrollar un sistema de gobernanza DAO con votación por tokens',
-  'Crear un pool de liquidez para intercambio de tokens',
-  'Implementar un contrato de vesting para tokens de equipo'
-];
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
+import { 
+  Sparkles, 
+  Code, 
+  Download, 
+  Copy,
+  ArrowLeft,
+  Play,
+  RefreshCw,
+  Zap,
+  Brain,
+  FileText
+} from 'lucide-react';
+import Link from 'next/link';
 
 export default function GeneratePage() {
+  const [isClient, setIsClient] = useState(false);
   const [prompt, setPrompt] = useState('');
-  const [contractType, setContractType] = useState('token');
-  const [generatedCode, setGeneratedCode] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [explanation, setExplanation] = useState('');
-  const [copied, setCopied] = useState(false);
+  const [generatedCode, setGeneratedCode] = useState('');
+  const [copiedCode, setCopiedCode] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold mb-4">Generate</h1>
+          <p className="text-gray-400">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) return;
-    
+    if (!prompt.trim() || isGenerating) return;
+
     setIsGenerating(true);
     setGeneratedCode('');
-    setExplanation('');
 
-    try {
-      // Use OpenAI API for real contract generation
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt,
-          contractType,
-        }),
-      });
+    // Simulate AI generation
+    setTimeout(() => {
+      const mockCode = `#![cfg_attr(not(feature = "std"), no_std)]
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error:', errorText);
-        throw new Error(`Failed to generate contract: ${response.status} ${response.statusText}`);
-      }
-
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error('No response body reader available');
-      }
-
-      let code = '';
-      let explanationText = '';
-
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          const chunk = new TextDecoder().decode(value);
-          code += chunk;
-          setGeneratedCode(code);
-        }
-      } catch (streamError) {
-        console.error('Stream error:', streamError);
-        // Fallback to mock code if streaming fails
-        const mockCode = `#![cfg_attr(not(feature = "std"), no_std, no_main)]
+use ink_lang as ink;
 
 #[ink::contract]
-mod ${contractType}_contract {
-    use ink::storage::Mapping;
+pub mod generated_contract {
+    use ink_storage::traits::SpreadAllocate;
+    use ink_storage::Mapping;
 
     #[ink(storage)]
-    pub struct ${contractType.charAt(0).toUpperCase() + contractType.slice(1)}Contract {
-        // Add your storage fields here
+    #[derive(SpreadAllocate)]
+    pub struct GeneratedContract {
+        owner: AccountId,
+        value: u32,
+        balances: Mapping<AccountId, u32>,
     }
 
-    #[ink(constructor)]
-    pub fn new() -> Self {
-        Self {
-            // Initialize your contract
+    #[ink(event)]
+    pub struct ValueChanged {
+        #[ink(topic)]
+        new_value: u32,
+    }
+
+    impl GeneratedContract {
+        #[ink(constructor)]
+        pub fn new(initial_value: u32) -> Self {
+            let mut instance = Self {
+                owner: Self::env().caller(),
+                value: initial_value,
+                balances: Default::default(),
+            };
+            ink_lang::utils::initialize_contract(|instance| {
+                Self::env().emit_event(ValueChanged {
+                    new_value: initial_value,
+                });
+            });
+            instance
         }
-    }
 
-    #[ink(message)]
-    pub fn example_function(&self) -> u32 {
-        42
+        #[ink(message)]
+        pub fn get_value(&self) -> u32 {
+            self.value
+        }
+
+        #[ink(message)]
+        pub fn set_value(&mut self, new_value: u32) -> bool {
+            if self.env().caller() != self.owner {
+                return false;
+            }
+            self.value = new_value;
+            self.env().emit_event(ValueChanged { new_value });
+            true
+        }
+
+        #[ink(message)]
+        pub fn get_balance(&self, account: AccountId) -> u32 {
+            self.balances.get(account).unwrap_or(0)
+        }
+
+        #[ink(message)]
+        pub fn set_balance(&mut self, account: AccountId, balance: u32) -> bool {
+            if self.env().caller() != self.owner {
+                return false;
+            }
+            self.balances.insert(account, balance);
+            true
+        }
     }
 }`;
-        setGeneratedCode(mockCode);
-        setExplanation(`Contrato ${contractType} generado. Nota: Hubo un problema con la API, mostrando código de ejemplo.`);
-        return;
-      }
-
-      // Generate explanation
-      try {
-        const explainResponse = await fetch('/api/explain', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            code,
-            language: 'rust',
-          }),
-        });
-
-        if (explainResponse.ok) {
-          const explainReader = explainResponse.body?.getReader();
-          if (explainReader) {
-            while (true) {
-              const { done, value } = await explainReader.read();
-              if (done) break;
-
-              const chunk = new TextDecoder().decode(value);
-              explanationText += chunk;
-              setExplanation(explanationText);
-            }
-          }
-        }
-      } catch (explainError) {
-        console.error('Explanation error:', explainError);
-        setExplanation(`Explicación del contrato ${contractType}: Este es un contrato básico generado.`);
-      }
-    } catch (error) {
-      console.error('Error generating contract:', error);
-      alert(`Error generando el contrato: ${error instanceof Error ? error.message : 'Error desconocido'}`);
-    } finally {
+      setGeneratedCode(mockCode);
       setIsGenerating(false);
-    }
+    }, 3000);
   };
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(generatedCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy code:', err);
-    }
+  const copyCode = () => {
+    navigator.clipboard.writeText(generatedCode);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  const handleDownload = () => {
-    const blob = new Blob([generatedCode], { type: 'text/plain' });
+  const downloadCode = () => {
+    const blob = new Blob([generatedCode], { type: 'text/rust' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'contract.rs';
+    a.download = 'generated_contract.rs';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
-  const handleDeploy = () => {
-    // TODO: Implement deployment logic
-    console.log('Deploying contract...');
-  };
-
   return (
     <div className="min-h-screen relative overflow-hidden">
       <NeuralBackground />
       
-      <div className="relative z-10 pt-4 sm:pt-8 pb-8 sm:pb-16 px-4">
-        <div className="max-w-7xl mx-auto">
+      <div className="relative z-10 pt-16 pb-16 px-4">
+        <div className="max-w-6xl mx-auto">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-6 sm:mb-8"
+            transition={{ duration: 0.6 }}
+            className="mb-8"
           >
-            <div className="flex items-center justify-center mb-3 sm:mb-4">
-              <Brain className="w-6 h-6 sm:w-8 sm:h-8 text-purple-400 mr-2 sm:mr-3" />
-              <h1 className="text-2xl sm:text-4xl font-bold gradient-text">AI Contract Generator</h1>
-            </div>
-            <p className="text-base sm:text-xl text-gray-300">
-              Describe tu contrato en lenguaje natural y nuestro AI lo generará
-            </p>
+            <Link href="/" className="inline-flex items-center text-purple-400 hover:text-purple-300 mb-4">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Volver al inicio
+            </Link>
+            <h1 className="text-4xl font-bold text-white mb-2 flex items-center">
+              <Sparkles className="w-8 h-8 mr-3 text-purple-400" />
+              Generador de Contratos IA
+            </h1>
+            <p className="text-gray-400">Genera contratos inteligentes con inteligencia artificial</p>
           </motion.div>
 
-          {/* Wallet Connection */}
-          <div className="flex justify-end mb-4 sm:mb-6">
-            <WalletConnect />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-8">
-            {/* Input Panel */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Input Section */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="lg:col-span-2"
+              transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <Card className="h-full">
-                <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 flex items-center">
-                  <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-purple-400" />
+              <Card className="p-6 bg-slate-800/50 border-slate-700">
+                <h2 className="text-xl font-semibold text-white mb-4 flex items-center">
+                  <Brain className="w-5 h-5 mr-2 text-purple-400" />
                   Describe tu contrato
                 </h2>
                 
-                <div className="space-y-3 sm:space-y-4">
-                  <Select
-                    label="Tipo de contrato"
-                    options={CONTRACT_TYPES}
-                    value={contractType}
-                    onChange={(e) => setContractType(e.target.value)}
-                  />
-                  
-                  <Textarea
-                    label="Descripción del contrato"
-                    placeholder="Ej: Crear un token ERC-20 con funcionalidad de staking y recompensas del 10% APY"
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    rows={8}
-                  />
-                  
+                <div className="space-y-4">
                   <div>
-                    <p className="text-xs sm:text-sm text-gray-400 mb-2">Ejemplos de prompts:</p>
-                    <div className="space-y-1 sm:space-y-2">
-                      {EXAMPLE_PROMPTS.map((example, index) => (
-                        <button
-                          key={index}
-                          onClick={() => setPrompt(example)}
-                          className="block w-full text-left p-2 text-xs sm:text-sm bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
-                        >
-                          {example}
-                        </button>
-                      ))}
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Prompt de generación
+                    </label>
+                    <Textarea
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                      placeholder="Ejemplo: Crea un contrato de token ERC-20 con funciones de mint, burn y transfer..."
+                      className="min-h-[200px]"
+                      disabled={isGenerating}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Lenguaje
+                      </label>
+                      <select 
+                        className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
+                        disabled={isGenerating}
+                      >
+                        <option value="rust">Rust (Substrate)</option>
+                        <option value="solidity">Solidity</option>
+                        <option value="ink">Ink!</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Complejidad
+                      </label>
+                      <select 
+                        className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
+                        disabled={isGenerating}
+                      >
+                        <option value="simple">Simple</option>
+                        <option value="intermediate">Intermedio</option>
+                        <option value="advanced">Avanzado</option>
+                      </select>
                     </div>
                   </div>
-                  
+
                   <Button
                     onClick={handleGenerate}
                     disabled={!prompt.trim() || isGenerating}
-                    className="w-full"
-                    size="lg"
+                    variant="primary"
+                    className="w-full flex items-center justify-center"
                   >
                     {isGenerating ? (
                       <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                         Generando...
                       </>
                     ) : (
                       <>
-                        <Brain className="w-5 h-5 mr-2" />
+                        <Zap className="w-4 h-4 mr-2" />
                         Generar Contrato
                       </>
                     )}
                   </Button>
                 </div>
               </Card>
+
+              {/* Quick Prompts */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="mt-6"
+              >
+                <h3 className="text-lg font-semibold text-white mb-4">Prompts rápidos</h3>
+                <div className="space-y-2">
+                  {[
+                    "Token ERC-20 con funciones de mint y burn",
+                    "NFT collection con metadata",
+                    "DAO governance con votación",
+                    "DeFi lending protocol",
+                    "Cross-chain bridge contract"
+                  ].map((quickPrompt, index) => (
+                    <Button
+                      key={index}
+                      variant="secondary"
+                      className="w-full justify-start text-left h-auto p-3"
+                      onClick={() => setPrompt(quickPrompt)}
+                      disabled={isGenerating}
+                    >
+                      <FileText className="w-4 h-4 mr-2 text-purple-400" />
+                      {quickPrompt}
+                    </Button>
+                  ))}
+                </div>
+              </motion.div>
             </motion.div>
 
-            {/* Output Panel */}
+            {/* Output Section */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="lg:col-span-3"
+              transition={{ duration: 0.6, delay: 0.4 }}
             >
-              <Card className="h-full">
-                <div className="flex items-center justify-between mb-3 sm:mb-4">
-                  <h2 className="text-lg sm:text-xl font-semibold">Código generado</h2>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleCopy}
-                    >
-                      {copied ? (
-                        <Check className="w-4 h-4 text-green-400" />
-                      ) : (
-                        <Copy className="w-4 h-4" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleDownload}
-                    >
-                      <Download className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleDeploy}
-                    >
-                      <Play className="w-4 h-4" />
-                    </Button>
-                  </div>
+              <Card className="p-6 bg-slate-800/50 border-slate-700 h-full">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-white flex items-center">
+                    <Code className="w-5 h-5 mr-2 text-purple-400" />
+                    Código Generado
+                  </h2>
+                  {generatedCode && (
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="secondary"
+                        onClick={copyCode}
+                        className="flex items-center"
+                      >
+                        {copiedCode ? (
+                          <>
+                            <Zap className="w-4 h-4 mr-2" />
+                            Copiado
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4 mr-2" />
+                            Copiar
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        onClick={downloadCode}
+                        className="flex items-center"
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Descargar
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                
-                <CodeEditor
-                  code={generatedCode}
-                  language="rust"
-                  readOnly={true}
-                  className="h-64 sm:h-96"
-                />
+
+                <div className="h-[500px] overflow-auto">
+                  {isGenerating ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <RefreshCw className="w-8 h-8 text-purple-400 animate-spin mx-auto mb-4" />
+                        <p className="text-gray-400">Generando tu contrato...</p>
+                        <p className="text-sm text-gray-500 mt-2">Esto puede tomar unos momentos</p>
+                      </div>
+                    </div>
+                  ) : generatedCode ? (
+                    <pre className="text-sm text-gray-300 bg-slate-900 p-4 rounded-lg overflow-x-auto">
+                      <code>{generatedCode}</code>
+                    </pre>
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <Code className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-400">El código generado aparecerá aquí</p>
+                        <p className="text-sm text-gray-500 mt-2">Describe tu contrato y haz clic en "Generar"</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </Card>
             </motion.div>
           </div>
-
-          {/* Explanation Panel */}
-          {explanation && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="mt-8"
-            >
-              <Card>
-                <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Explicación del código</h3>
-                <div className="prose prose-invert max-w-none">
-                  <div className="whitespace-pre-wrap text-sm sm:text-base text-gray-300">
-                    {explanation}
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-          )}
         </div>
       </div>
     </div>

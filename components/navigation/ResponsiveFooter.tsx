@@ -39,7 +39,7 @@ export function ResponsiveFooter() {
       connections: number[];
     }> = [];
     
-    const particleCount = typeof window !== 'undefined' && window.innerWidth < 640 ? 30 : 60;
+    const particleCount = 60; // Use consistent count for SSR
 
     for (let i = 0; i < particleCount; i++) {
       particles.push({

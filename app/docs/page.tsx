@@ -1,554 +1,415 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { NeuralBackground } from '@/components/backgrounds/NeuralBackground';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { 
   BookOpen, 
   Search, 
-  Code, 
-  Zap, 
-  Shield, 
-  Rocket,
+  FileText, 
+  Code,
+  ArrowLeft,
+  ExternalLink,
   ChevronRight,
   ChevronDown,
-  ExternalLink,
-  Copy,
-  Check,
-  Star,
-  Users,
-  Clock,
-  Tag
+  Zap,
+  Globe,
+  Shield
 } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
-import { NeuralBackground } from '@/components/backgrounds/NeuralBackground';
+import Link from 'next/link';
 
-const DOCUMENTATION_SECTIONS = [
-  {
-    id: 'getting-started',
-    title: 'Comenzando',
-    icon: Rocket,
-    color: 'from-purple-500 to-pink-500',
-    articles: [
-      {
-        title: 'Introducción a Polkadot DevKit',
-        description: 'Aprende los conceptos básicos y comienza a desarrollar',
-        readTime: '5 min',
-        difficulty: 'beginner',
-        tags: ['introduction', 'basics'],
-        content: `# Introducción a Polkadot DevKit
-
-Polkadot DevKit es una plataforma integral para el desarrollo de contratos inteligentes en el ecosistema Polkadot. Nuestra misión es reducir el tiempo de desarrollo en un 70% mediante herramientas de IA avanzadas.
-
-## Características principales
-
-- **AI Contract Generator**: Genera contratos ink! usando lenguaje natural
-- **Template Library**: Biblioteca de plantillas pre-construidas
-- **Code Explainer**: Explicaciones detalladas de código
-- **Error Debugger**: Debugging inteligente de errores
-- **Deployment Assistant**: Asistente paso a paso para deployment
-
-## Flujo de trabajo típico
-
-1. **Describe tu contrato** en lenguaje natural
-2. **Genera el código** con nuestro AI
-3. **Revisa y personaliza** según tus necesidades
-4. **Debug errores** si es necesario
-5. **Despliega** a la testnet de Paseo`
-      },
-      {
-        title: 'Configuración del entorno',
-        description: 'Configura tu entorno de desarrollo para Polkadot',
-        readTime: '10 min',
-        difficulty: 'beginner',
-        tags: ['setup', 'environment'],
-        content: `# Configuración del entorno
-
-## Requisitos previos
-
-- Node.js 18+ 
-- Rust 1.70+
-- Cargo Contract
-- Polkadot.js Extension
-
-## Instalación
-
-\`\`\`bash
-# Instalar Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-
-# Instalar Cargo Contract
-cargo install cargo-contract --force
-
-# Instalar dependencias del proyecto
-npm install
-\`\`\`
-
-## Configuración de variables de entorno
-
-\`\`\`env
-OPENAI_API_KEY=tu_clave_aqui
-NEXT_PUBLIC_PASEO_RPC=wss://paseo.rpc.amforc.com
-\`\`\``
-      }
-    ]
-  },
-  {
-    id: 'ai-generator',
-    title: 'AI Generator',
-    icon: Code,
-    color: 'from-blue-500 to-cyan-500',
-    articles: [
-      {
-        title: 'Cómo usar el AI Generator',
-        description: 'Guía completa para generar contratos con IA',
-        readTime: '8 min',
-        difficulty: 'intermediate',
-        tags: ['ai', 'generator', 'tutorial'],
-        content: `# AI Generator
-
-El AI Generator es la característica principal de Polkadot DevKit. Utiliza GPT-4 para generar contratos ink! completos basados en descripciones en lenguaje natural.
-
-## Tipos de contratos soportados
-
-- **PSP-22 Tokens**: Tokens fungibles estándar
-- **PSP-34 NFTs**: Tokens no fungibles
-- **Governance**: Contratos de gobernanza DAO
-- **Staking**: Contratos de staking y recompensas
-- **DeFi**: Protocolos DeFi complejos
-- **Custom**: Contratos personalizados
-
-## Mejores prácticas para prompts
-
-### ✅ Buenos prompts
-- "Crear un token ERC-20 con funcionalidad de staking y recompensas del 10% APY"
-- "Implementar un contrato de NFT con royalties para artistas del 5%"
-- "Desarrollar un sistema de gobernanza DAO con votación por delegación"
-
-### ❌ Prompts vagos
-- "Crear un token"
-- "Hacer un contrato"
-- "Algo de DeFi"
-
-## Ejemplo de uso
-
-1. Ve a la página **Generar**
-2. Selecciona el tipo de contrato
-3. Describe tu contrato en detalle
-4. Haz clic en "Generar Contrato"
-5. Revisa el código generado
-6. Personaliza según necesites`
-      }
-    ]
-  },
-  {
-    id: 'templates',
-    title: 'Templates',
-    icon: Zap,
-    color: 'from-green-500 to-emerald-500',
-    articles: [
-      {
-        title: 'Biblioteca de plantillas',
-        description: 'Explora y usa nuestras plantillas pre-construidas',
-        readTime: '6 min',
-        difficulty: 'beginner',
-        tags: ['templates', 'library'],
-        content: `# Biblioteca de plantillas
-
-Nuestra biblioteca incluye más de 20 plantillas pre-construidas y auditadas para acelerar tu desarrollo.
-
-## Categorías disponibles
-
-### Tokens
-- PSP-22 básico
-- PSP-22 con minting
-- PSP-22 con burning
-- PSP-22 con pausas
-
-### NFTs
-- PSP-34 básico
-- PSP-34 con royalties
-- PSP-34 con metadata
-- PSP-34 con marketplace
-
-### Governance
-- DAO básico
-- DAO con delegación
-- DAO con timelock
-- DAO con multisig
-
-### DeFi
-- Staking pool
-- Lending protocol
-- DEX básico
-- Yield farming
-
-## Cómo usar plantillas
-
-1. Navega a **Plantillas**
-2. Filtra por categoría o complejidad
-3. Haz clic en "Ver código"
-4. Revisa la implementación
-5. Descarga o personaliza`
-      }
-    ]
-  },
-  {
-    id: 'deployment',
-    title: 'Deployment',
-    icon: Rocket,
-    color: 'from-yellow-500 to-orange-500',
-    articles: [
-      {
-        title: 'Guía de deployment',
-        description: 'Despliega tus contratos a Paseo testnet',
-        readTime: '12 min',
-        difficulty: 'intermediate',
-        tags: ['deployment', 'paseo', 'testnet'],
-        content: `# Guía de deployment
-
-## Redes soportadas
-
-- **Paseo Testnet**: Red oficial de pruebas de Polkadot
-- **Rococo Testnet**: Red de pruebas para parachains
-- **Westend Testnet**: Red de pruebas alternativa
-
-## Proceso de deployment
-
-### 1. Preparación
-- Compila tu contrato con \`cargo contract build\`
-- Verifica que no hay errores de compilación
-- Obtén tokens de testnet
-
-### 2. Subir código
-- Usa el Deployment Assistant
-- Sube el archivo .wasm
-- Configura los parámetros del constructor
-
-### 3. Instanciar contrato
-- Proporciona los parámetros del constructor
-- Confirma la transacción
-- Obtén la dirección del contrato
-
-### 4. Verificación
-- Verifica en el explorador de bloques
-- Prueba las funciones principales
-- Documenta la dirección del contrato`
-      }
-    ]
-  },
-  {
-    id: 'security',
-    title: 'Seguridad',
-    icon: Shield,
-    color: 'from-red-500 to-pink-500',
-    articles: [
-      {
-        title: 'Mejores prácticas de seguridad',
-        description: 'Guía de seguridad para contratos ink!',
-        readTime: '15 min',
-        difficulty: 'advanced',
-        tags: ['security', 'best-practices', 'audit'],
-        content: `# Mejores prácticas de seguridad
-
-## Principios fundamentales
-
-### 1. Validación de entrada
-- Siempre valida los parámetros de entrada
-- Verifica límites y rangos
-- Implementa checks de overflow/underflow
-
-### 2. Control de acceso
-- Implementa roles y permisos
-- Usa modifiers para restricciones
-- Considera pausas de emergencia
-
-### 3. Manejo de errores
-- Usa Result<T, Error> para manejo de errores
-- Implementa mensajes de error claros
-- Considera rollback en caso de fallo
-
-## Patrones de seguridad comunes
-
-### Reentrancy Protection
-\`\`\`rust
-#[ink(storage)]
-pub struct Contract {
-    locked: bool,
+interface DocSection {
+  id: string;
+  title: string;
+  description: string;
+  icon: any;
+  subsections: {
+    title: string;
+    content: string;
+    code?: string;
+    external?: string;
+  }[];
 }
-
-#[ink(message)]
-pub fn withdraw(&mut self) -> Result<(), Error> {
-    if self.locked {
-        return Err(Error::Reentrancy);
-    }
-    self.locked = true;
-    // ... lógica de withdrawal
-    self.locked = false;
-    Ok(())
-}
-\`\`\`
-
-### Access Control
-\`\`\`rust
-#[ink(message)]
-pub fn admin_function(&mut self) -> Result<(), Error> {
-    if self.env().caller() != self.admin {
-        return Err(Error::Unauthorized);
-    }
-    // ... lógica de admin
-    Ok(())
-}
-\`\`\``
-      }
-    ]
-  }
-];
 
 export default function DocsPage() {
+  const [isClient, setIsClient] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [expandedSections, setExpandedSections] = useState<string[]>(['getting-started']);
-  const [selectedArticle, setSelectedArticle] = useState<any>(null);
-  const [copied, setCopied] = useState(false);
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
-  const filteredSections = DOCUMENTATION_SECTIONS.map(section => ({
-    ...section,
-    articles: section.articles.filter(article =>
-      article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      article.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      article.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-    )
-  })).filter(section => section.articles.length > 0);
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
-  const toggleSection = (sectionId: string) => {
-    setExpandedSections(prev =>
-      prev.includes(sectionId)
-        ? prev.filter(id => id !== sectionId)
-        : [...prev, sectionId]
+  if (!isClient) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold mb-4">Docs</h1>
+          <p className="text-gray-400">Cargando...</p>
+        </div>
+      </div>
     );
-  };
+  }
 
-  const handleCopyCode = async (code: string) => {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
-  };
+  const docSections: DocSection[] = [
+    {
+      id: 'getting-started',
+      title: 'Comenzar',
+      description: 'Guía de inicio rápido para Polkadot DevKit',
+      icon: Zap,
+      subsections: [
+        {
+          title: 'Instalación',
+          content: 'Instala las dependencias necesarias para comenzar con Polkadot DevKit.',
+          code: `npm install @polkadot/api @polkadot/api-contract
+# o
+yarn add @polkadot/api @polkadot/api-contract`,
+          external: 'https://polkadot.js.org/docs/api/start/install'
+        },
+        {
+          title: 'Configuración',
+          content: 'Configura tu entorno de desarrollo para trabajar con Polkadot.',
+          code: `// Configuración básica
+const api = await ApiPromise.create({
+  provider: new WsProvider('wss://paseo.rpc.amforc.com')
+});`,
+          external: 'https://polkadot.js.org/docs/api/start/create'
+        },
+        {
+          title: 'Primer Contrato',
+          content: 'Crea tu primer contrato inteligente con Ink!',
+          code: `#![cfg_attr(not(feature = "std"), no_std)]
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'beginner': return 'text-green-400 bg-green-400/20';
-      case 'intermediate': return 'text-yellow-400 bg-yellow-400/20';
-      case 'advanced': return 'text-red-400 bg-red-400/20';
-      default: return 'text-gray-400 bg-gray-400/20';
+use ink_lang as ink;
+
+#[ink::contract]
+pub mod my_contract {
+    #[ink(storage)]
+    pub struct MyContract {
+        value: i32,
     }
-  };
+
+    impl MyContract {
+        #[ink(constructor)]
+        pub fn new(init_value: i32) -> Self {
+            Self { value: init_value }
+        }
+
+        #[ink(message)]
+        pub fn get(&self) -> i32 {
+            self.value
+        }
+    }
+}`,
+          external: 'https://use.ink/getting-started/creating-an-ink-project'
+        }
+      ]
+    },
+    {
+      id: 'contracts',
+      title: 'Contratos',
+      description: 'Desarrollo de contratos inteligentes',
+      icon: Code,
+      subsections: [
+        {
+          title: 'Estructura de Contratos',
+          content: 'Aprende la estructura básica de un contrato Ink!',
+          code: `#[ink::contract]
+pub mod my_contract {
+    use ink_storage::traits::SpreadAllocate;
+    
+    #[ink(storage)]
+    #[derive(SpreadAllocate)]
+    pub struct MyContract {
+        // Storage variables
+    }
+    
+    impl MyContract {
+        // Constructor
+        #[ink(constructor)]
+        pub fn new() -> Self {
+            // Implementation
+        }
+        
+        // Messages
+        #[ink(message)]
+        pub fn my_message(&self) -> ReturnType {
+            // Implementation
+        }
+    }
+}`,
+          external: 'https://use.ink/basics/contract'
+        },
+        {
+          title: 'Storage y Variables',
+          content: 'Gestiona el almacenamiento de tu contrato de forma eficiente.',
+          code: `#[ink(storage)]
+pub struct MyContract {
+    // Simple types
+    value: i32,
+    owner: AccountId,
+    
+    // Collections
+    balances: Mapping<AccountId, Balance>,
+    users: Vec<AccountId>,
+    
+    // Custom types
+    metadata: Option<String>,
+}`,
+          external: 'https://use.ink/basics/storage'
+        },
+        {
+          title: 'Eventos',
+          content: 'Define y emite eventos en tus contratos.',
+          code: `#[ink(event)]
+pub struct Transfer {
+    #[ink(topic)]
+    from: Option<AccountId>,
+    #[ink(topic)]
+    to: Option<AccountId>,
+    value: Balance,
+}
+
+// Emitir evento
+self.env().emit_event(Transfer {
+    from: Some(from),
+    to: Some(to),
+    value,
+});`,
+          external: 'https://use.ink/basics/events'
+        }
+      ]
+    },
+    {
+      id: 'deployment',
+      title: 'Deployment',
+      description: 'Despliega tus contratos en Paseo',
+      icon: Globe,
+      subsections: [
+        {
+          title: 'Preparación',
+          content: 'Prepara tu contrato para el deployment en Paseo testnet.',
+          code: `# Compilar el contrato
+cargo contract build
+
+# Generar metadata
+cargo contract generate-metadata`,
+          external: 'https://use.ink/getting-started/deploy-your-contract'
+        },
+        {
+          title: 'Deployment Manual',
+          content: 'Despliega tu contrato manualmente usando Polkadot.js Apps.',
+          external: 'https://polkadot.js.org/apps/?rpc=wss://paseo.rpc.amforc.com'
+        },
+        {
+          title: 'Verificación',
+          content: 'Verifica que tu contrato se desplegó correctamente.',
+          code: `// Verificar deployment
+const contract = new ContractPromise(api, abi, contractAddress);
+const result = await contract.query.get(account.address, {});
+console.log('Contract deployed:', result.output);`,
+          external: 'https://polkadot.js.org/docs/api-contract/start/contract.read'
+        }
+      ]
+    },
+    {
+      id: 'testing',
+      title: 'Testing',
+      description: 'Pruebas y debugging',
+      icon: Shield,
+      subsections: [
+        {
+          title: 'Unit Tests',
+          content: 'Escribe pruebas unitarias para tus contratos.',
+          code: `#[cfg(test)]
+mod tests {
+    use super::*;
+    use ink_env::test;
+
+    #[ink::test]
+    fn constructor_works() {
+        let contract = MyContract::new(42);
+        assert_eq!(contract.get(), 42);
+    }
+}`,
+          external: 'https://use.ink/basics/testing'
+        },
+        {
+          title: 'Integration Tests',
+          content: 'Pruebas de integración con el entorno de test.',
+          code: `#[ink::test]
+fn it_works() {
+    let accounts = default_accounts();
+    let mut contract = MyContract::new(42);
+    
+    // Test contract interaction
+    let result = contract.set_value(100);
+    assert!(result.is_ok());
+}`,
+          external: 'https://use.ink/basics/testing'
+        },
+        {
+          title: 'Debugging',
+          content: 'Herramientas y técnicas para debugging.',
+          code: `// Usar ink_env::debug_print! para debugging
+ink_env::debug_print!("Debug: value = {}", self.value);
+
+// Usar panic! para errores críticos
+if value < 0 {
+    panic!("Value cannot be negative");
+}`,
+          external: 'https://use.ink/basics/debugging'
+        }
+      ]
+    }
+  ];
+
+  const filteredSections = docSections.filter(section =>
+    section.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    section.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    section.subsections.some(sub => 
+      sub.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sub.content.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
 
   return (
     <div className="min-h-screen relative overflow-hidden">
       <NeuralBackground />
       
-      <div className="relative z-10 pt-8 pb-16 px-4">
+      <div className="relative z-10 pt-16 pb-16 px-4">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-12"
+            transition={{ duration: 0.6 }}
+            className="mb-8"
           >
-            <div className="flex items-center justify-center mb-6">
-              <BookOpen className="w-12 h-12 text-purple-400 mr-4" />
-              <h1 className="text-5xl font-bold gradient-text">Documentación</h1>
-            </div>
-            <p className="text-2xl text-gray-300 mb-8">
-              Guías completas para dominar Polkadot DevKit
-            </p>
-            
-            {/* Search */}
-            <div className="max-w-2xl mx-auto relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <Input
-                placeholder="Buscar en la documentación..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-                />
-            </div>
+            <Link href="/" className="inline-flex items-center text-purple-400 hover:text-purple-300 mb-4">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Volver al inicio
+            </Link>
+            <h1 className="text-4xl font-bold text-white mb-2 flex items-center">
+              <BookOpen className="w-8 h-8 mr-3 text-purple-400" />
+              Documentación
+            </h1>
+            <p className="text-gray-400">Guía completa para desarrollar en Polkadot</p>
           </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Sidebar */}
-          <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-              className="lg:col-span-1"
-            >
-              <Card className="sticky top-8">
-                <h3 className="text-lg font-semibold mb-4">Contenido</h3>
-                <div className="space-y-2">
-                  {filteredSections.map((section) => (
-                    <div key={section.id}>
-                      <button
-                        onClick={() => toggleSection(section.id)}
-                        className="w-full flex items-center justify-between p-3 text-left hover:bg-white/5 rounded-lg transition-colors"
-                      >
-                        <div className="flex items-center">
-                          <div className={`p-2 rounded-lg bg-gradient-to-r ${section.color} mr-3`}>
-                            <section.icon className="w-4 h-4 text-white" />
-                          </div>
-                          <span className="font-medium">{section.title}</span>
-                        </div>
-                        {expandedSections.includes(section.id) ? (
-                          <ChevronDown className="w-4 h-4" />
-                        ) : (
-                          <ChevronRight className="w-4 h-4" />
-                        )}
-                      </button>
-                      
-                      {expandedSections.includes(section.id) && (
-                        <div className="ml-8 space-y-1 mt-2">
-                          {section.articles.map((article, index) => (
-                            <button
-                  key={index}
-                              onClick={() => setSelectedArticle(article)}
-                              className="w-full text-left p-2 text-sm hover:bg-white/5 rounded transition-colors"
-                            >
-                              {article.title}
-                            </button>
-                          ))}
-                      </div>
-                      )}
-                    </div>
-                      ))}
-                    </div>
-                  </Card>
-          </motion.div>
-
-            {/* Main Content */}
-          <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-              className="lg:col-span-3"
-            >
-              {selectedArticle ? (
-                <Card>
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <h2 className="text-2xl font-bold mb-2">{selectedArticle.title}</h2>
-                      <p className="text-gray-400">{selectedArticle.description}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(selectedArticle.difficulty)}`}>
-                        {selectedArticle.difficulty}
-                          </span>
-                      <div className="flex items-center text-sm text-gray-400">
-                        <Clock className="w-4 h-4 mr-1" />
-                        {selectedArticle.readTime}
-                      </div>
-                    </div>
-                      </div>
-                      
-                  <div className="prose prose-invert max-w-none">
-                    <div className="whitespace-pre-wrap text-gray-300 leading-relaxed">
-                      {selectedArticle.content}
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between mt-8 pt-6 border-t border-white/20">
-                    <div className="flex flex-wrap gap-2">
-                      {selectedArticle.tags.map((tag: string, index: number) => (
-                        <span key={index} className="px-2 py-1 bg-purple-400/20 text-purple-400 rounded text-xs">
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleCopyCode(selectedArticle.content)}
-                      >
-                        {copied ? (
-                          <Check className="w-4 h-4 text-green-400" />
-                        ) : (
-                          <Copy className="w-4 h-4" />
-                        )}
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Star className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <ExternalLink className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ) : (
-                <Card>
-                  <div className="text-center py-12">
-                    <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4 opacity-50" />
-                    <h3 className="text-xl font-semibold mb-2">Selecciona un artículo</h3>
-                    <p className="text-gray-400">
-                      Elige un artículo del menú lateral para comenzar a leer
-                    </p>
-                    </div>
-                  </Card>
-              )}
-                </motion.div>
-            </div>
-
-          {/* Quick Stats */}
+          {/* Search */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="mt-12"
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mb-8"
           >
-            <Card>
-              <h3 className="text-2xl font-semibold text-center mb-8 gradient-text">
-                Estadísticas de la documentación
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-purple-400 mb-2">
-                    {DOCUMENTATION_SECTIONS.length}
-                  </div>
-                  <div className="text-gray-400">Secciones</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-blue-400 mb-2">
-                    {DOCUMENTATION_SECTIONS.reduce((sum, section) => sum + section.articles.length, 0)}
-                  </div>
-                  <div className="text-gray-400">Artículos</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-green-400 mb-2">
-                    {DOCUMENTATION_SECTIONS.reduce((sum, section) => 
-                      sum + section.articles.reduce((articleSum, article) => 
-                        articleSum + parseInt(article.readTime), 0
-                      ), 0
-                    )} min
-                  </div>
-                  <div className="text-gray-400">Tiempo de lectura</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-yellow-400 mb-2">
-                    {DOCUMENTATION_SECTIONS.reduce((sum, section) => 
-                      sum + section.articles.filter(article => article.difficulty === 'beginner').length, 0
-                    )}
-                  </div>
-                  <div className="text-gray-400">Para principiantes</div>
-                </div>
-              </div>
-              </Card>
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar en la documentación..."
+                className="pl-10"
+              />
+            </div>
           </motion.div>
+
+          {/* Documentation Sections */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="space-y-6"
+          >
+            {filteredSections.map((section, index) => (
+              <motion.div
+                key={section.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 * index }}
+              >
+                <Card className="bg-slate-800/50 border-slate-700">
+                  <div
+                    className="p-6 cursor-pointer"
+                    onClick={() => setExpandedSection(
+                      expandedSection === section.id ? null : section.id
+                    )}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <section.icon className="w-6 h-6 text-purple-400 mr-3" />
+                        <div>
+                          <h3 className="text-xl font-semibold text-white">{section.title}</h3>
+                          <p className="text-gray-400 text-sm">{section.description}</p>
+                        </div>
+                      </div>
+                      {expandedSection === section.id ? (
+                        <ChevronDown className="w-5 h-5 text-gray-400" />
+                      ) : (
+                        <ChevronRight className="w-5 h-5 text-gray-400" />
+                      )}
+                    </div>
+                  </div>
+
+                  {expandedSection === section.id && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="border-t border-slate-700"
+                    >
+                      <div className="p-6 space-y-6">
+                        {section.subsections.map((subsection, subIndex) => (
+                          <div key={subIndex} className="space-y-3">
+                            <h4 className="text-lg font-medium text-white">{subsection.title}</h4>
+                            <p className="text-gray-300">{subsection.content}</p>
+                            
+                            {subsection.code && (
+                              <div className="bg-slate-900 rounded-lg p-4">
+                                <pre className="text-sm text-gray-300 overflow-x-auto">
+                                  <code>{subsection.code}</code>
+                                </pre>
+                              </div>
+                            )}
+                            
+                            {subsection.external && (
+                              <div className="flex items-center space-x-2">
+                                <a
+                                  href={subsection.external}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center text-purple-400 hover:text-purple-300"
+                                >
+                                  <ExternalLink className="w-4 h-4 mr-1" />
+                                  Ver documentación oficial
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </Card>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {filteredSections.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center py-12"
+            >
+              <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-white mb-2">No se encontraron resultados</h3>
+              <p className="text-gray-400">Intenta con otros términos de búsqueda</p>
+            </motion.div>
+          )}
         </div>
       </div>
     </div>

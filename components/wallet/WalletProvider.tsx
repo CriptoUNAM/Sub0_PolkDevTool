@@ -39,10 +39,12 @@ export function WalletProvider({ children }: WalletProviderProps) {
     
     // Check if wallet is already connected
     try {
-      const savedAccount = localStorage.getItem('polkadot-devkit-account');
-      if (savedAccount) {
-        setAccount(savedAccount);
-        setIsConnected(true);
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const savedAccount = localStorage.getItem('polkadot-devkit-account');
+        if (savedAccount) {
+          setAccount(savedAccount);
+          setIsConnected(true);
+        }
       }
     } catch (error) {
       console.warn('Error accessing localStorage:', error);
@@ -69,7 +71,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
         
         setAccount(selectedAccount.address);
         setIsConnected(true);
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && window.localStorage) {
           localStorage.setItem('polkadot-devkit-account', selectedAccount.address);
           localStorage.setItem('polkadot-devkit-wallet-source', selectedAccount.source);
           localStorage.setItem('polkadot-devkit-account-name', selectedAccount.name);
@@ -85,7 +87,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
         
         setAccount(selectedAccount.address);
         setIsConnected(true);
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && window.localStorage) {
           localStorage.setItem('polkadot-devkit-account', selectedAccount.address);
           localStorage.setItem('polkadot-devkit-wallet-source', selectedAccount.source);
           localStorage.setItem('polkadot-devkit-account-name', selectedAccount.name);
@@ -121,7 +123,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     await subWalletService.disconnect();
     setAccount(null);
     setIsConnected(false);
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && window.localStorage) {
       localStorage.removeItem('polkadot-devkit-account');
       localStorage.removeItem('polkadot-devkit-wallet-source');
       localStorage.removeItem('polkadot-devkit-account-name');
