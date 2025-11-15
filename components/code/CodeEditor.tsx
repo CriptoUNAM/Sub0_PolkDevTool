@@ -87,7 +87,7 @@ export function CodeEditor({
         value={code}
         onChange={(e) => onCodeChange?.(e.target.value)}
         readOnly={readOnly}
-        className="w-full h-96 p-4 bg-slate-900/50 border border-white/20 rounded-xl text-white font-mono text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50"
+        className="w-full h-[300px] sm:h-96 md:h-[500px] min-h-[250px] p-3 sm:p-4 bg-slate-900/50 border border-white/20 rounded-xl text-white font-mono text-xs sm:text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50"
         placeholder="El código generado aparecerá aquí..."
         style={{
           fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',

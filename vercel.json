@@ -6,6 +6,21 @@
   "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 30
+    },
+    "app/api/test-ai/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/generate/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/explain/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/debug/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/chat/route.ts": {
+      "maxDuration": 60
     }
   },
   "build": {

@@ -16,7 +16,9 @@ import {
   Star,
   Zap,
   Shield,
-  Globe
+  Globe,
+  Brain,
+  RefreshCw
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -38,6 +40,8 @@ export default function TemplatesPage() {
   const [isClient, setIsClient] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [explanation, setExplanation] = useState('');
+  const [isExplaining, setIsExplaining] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -426,6 +430,63 @@ pub mod dao_governance {
     }
   };
 
+  const handleExplainTemplate = async () => {
+    if (!selectedTemplate || isExplaining) return;
+
+    setIsExplaining(true);
+    setExplanation('');
+
+    try {
+      const response = await fetch('/api/explain-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          templateCode: selectedTemplate.code,
+          templateName: selectedTemplate.name
+        })
+      });
+
+      if (!response.ok) throw new Error('Error al explicar plantilla');
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) throw new Error('No se pudo leer la respuesta');
+
+      let fullExplanation = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') break;
+            
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.error) throw new Error(parsed.error);
+              if (parsed.content) {
+                fullExplanation += parsed.content;
+                setExplanation(fullExplanation);
+              }
+            } catch (e) {
+              // Ignorar errores de parsing menores
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error explicando plantilla:', error);
+      setExplanation(`Error: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    } finally {
+      setIsExplaining(false);
+    }
+  };
+
   return (
     <div className="min-h-screen relative overflow-hidden">
       <NeuralBackground />
@@ -443,8 +504,8 @@ pub mod dao_governance {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Volver al inicio
             </Link>
-            <h1 className="text-4xl font-bold text-white mb-2 flex items-center">
-              <FileText className="w-8 h-8 mr-3 text-purple-400" />
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 flex items-center flex-wrap gap-2">
+              <FileText className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-purple-400" />
               Plantillas de Código
             </h1>
             <p className="text-gray-400">Plantillas listas para usar en tus proyectos</p>
@@ -530,12 +591,30 @@ pub mod dao_governance {
               <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="bg-slate-800 rounded-lg w-full max-w-4xl max-h-[80vh] overflow-hidden"
+                className="bg-slate-800 rounded-lg w-full max-w-[95vw] xs:max-w-[90vw] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[95vh] xs:max-h-[90vh] sm:max-h-[85vh] md:max-h-[80vh] overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between p-4 border-b border-slate-700">
                   <h3 className="text-xl font-semibold text-white">{selectedTemplate.name}</h3>
                   <div className="flex space-x-2">
+                    <Button
+                      variant="secondary"
+                      onClick={handleExplainTemplate}
+                      className="flex items-center"
+                      disabled={isExplaining}
+                    >
+                      {isExplaining ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          Explicando...
+                        </>
+                      ) : (
+                        <>
+                          <Brain className="w-4 h-4 mr-2" />
+                          Explicar con IA
+                        </>
+                      )}
+                    </Button>
                     <Button
                       variant="secondary"
                       onClick={copyCode}
@@ -555,16 +634,45 @@ pub mod dao_governance {
                     </Button>
                     <Button
                       variant="secondary"
-                      onClick={() => setSelectedTemplate(null)}
+                      onClick={() => {
+                        setSelectedTemplate(null);
+                        setExplanation('');
+                      }}
                     >
                       Cerrar
                     </Button>
                   </div>
                 </div>
-                <div className="p-4 overflow-auto max-h-[60vh]">
-                  <pre className="text-sm text-gray-300 bg-slate-900 p-4 rounded-lg overflow-x-auto">
-                    <code>{selectedTemplate.code}</code>
-                  </pre>
+                <div className="p-3 xs:p-4 sm:p-5 md:p-6 overflow-auto max-h-[75vh] xs:max-h-[70vh] sm:max-h-[65vh] md:max-h-[60vh]">
+                  {explanation ? (
+                    <div className="space-y-4">
+                      <div className="prose prose-invert max-w-none">
+                        <div 
+                          className="text-gray-300 whitespace-pre-wrap"
+                          dangerouslySetInnerHTML={{ 
+                            __html: explanation
+                              .replace(/```rust\n([\s\S]*?)\n```/g, '<pre class="bg-slate-900 p-4 rounded-lg overflow-x-auto"><code class="text-sm">$1</code></pre>')
+                              .replace(/```([\s\S]*?)```/g, '<pre class="bg-slate-900 p-4 rounded-lg overflow-x-auto"><code class="text-sm">$1</code></pre>')
+                              .replace(/### (.*)/g, '<h3 class="text-lg font-semibold text-white mt-6 mb-3">$1</h3>')
+                              .replace(/## (.*)/g, '<h2 class="text-xl font-semibold text-white mt-8 mb-4">$1</h2>')
+                              .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
+                              .replace(/\*(.*?)\*/g, '<em class="text-purple-300">$1</em>')
+                              .replace(/`(.*?)`/g, '<code class="bg-slate-700 px-1 py-0.5 rounded text-sm">$1</code>')
+                          }}
+                        />
+                      </div>
+                      <div className="border-t border-slate-700 pt-4">
+                        <h4 className="text-lg font-semibold text-white mb-2">Código de la Plantilla</h4>
+                        <pre className="text-sm text-gray-300 bg-slate-900 p-4 rounded-lg overflow-x-auto">
+                          <code>{selectedTemplate.code}</code>
+                        </pre>
+                      </div>
+                    </div>
+                  ) : (
+                    <pre className="text-sm text-gray-300 bg-slate-900 p-4 rounded-lg overflow-x-auto">
+                      <code>{selectedTemplate.code}</code>
+                    </pre>
+                  )}
                 </div>
               </motion.div>
             </motion.div>

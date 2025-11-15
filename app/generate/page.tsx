@@ -27,6 +27,8 @@ export default function GeneratePage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedCode, setGeneratedCode] = useState('');
   const [copiedCode, setCopiedCode] = useState(false);
+  const [language, setLanguage] = useState('rust');
+  const [complexity, setComplexity] = useState('simple');
 
   useEffect(() => {
     setIsClient(true);
@@ -49,80 +51,41 @@ export default function GeneratePage() {
     setIsGenerating(true);
     setGeneratedCode('');
 
-    // Simulate AI generation
-    setTimeout(() => {
-      const mockCode = `#![cfg_attr(not(feature = "std"), no_std)]
-
-use ink_lang as ink;
-
-#[ink::contract]
-pub mod generated_contract {
-    use ink_storage::traits::SpreadAllocate;
-    use ink_storage::Mapping;
-
-    #[ink(storage)]
-    #[derive(SpreadAllocate)]
-    pub struct GeneratedContract {
-        owner: AccountId,
-        value: u32,
-        balances: Mapping<AccountId, u32>,
-    }
-
-    #[ink(event)]
-    pub struct ValueChanged {
-        #[ink(topic)]
-        new_value: u32,
-    }
-
-    impl GeneratedContract {
-        #[ink(constructor)]
-        pub fn new(initial_value: u32) -> Self {
-            let mut instance = Self {
-                owner: Self::env().caller(),
-                value: initial_value,
-                balances: Default::default(),
-            };
-            ink_lang::utils::initialize_contract(|instance| {
-                Self::env().emit_event(ValueChanged {
-                    new_value: initial_value,
-                });
-            });
-            instance
-        }
-
-        #[ink(message)]
-        pub fn get_value(&self) -> u32 {
-            self.value
-        }
-
-        #[ink(message)]
-        pub fn set_value(&mut self, new_value: u32) -> bool {
-            if self.env().caller() != self.owner {
-                return false;
-            }
-            self.value = new_value;
-            self.env().emit_event(ValueChanged { new_value });
-            true
-        }
-
-        #[ink(message)]
-        pub fn get_balance(&self, account: AccountId) -> u32 {
-            self.balances.get(account).unwrap_or(0)
-        }
-
-        #[ink(message)]
-        pub fn set_balance(&mut self, account: AccountId, balance: u32) -> bool {
-            if self.env().caller() != self.owner {
-                return false;
-            }
-            self.balances.insert(account, balance);
-            true
-        }
-    }
-}`;
-      setGeneratedCode(mockCode);
+    try {
+      console.log('[Generate] Iniciando generación...', { prompt, language, complexity });
+      
+      // Usar la API de Gemini
+      const { generateContract } = await import('@/lib/api-client');
+      
+      let fullCode = '';
+      let chunkCount = 0;
+      
+      for await (const chunk of generateContract({
+        prompt,
+        contractType: 'General',
+        complexity: complexity,
+        features: [],
+        language: language
+      })) {
+        chunkCount++;
+        fullCode += chunk;
+        setGeneratedCode(fullCode);
+        console.log(`[Generate] Chunk ${chunkCount} recibido, longitud total: ${fullCode.length}`);
+      }
+      
+      console.log(`[Generate] Generación completada. Total chunks: ${chunkCount}, Longitud final: ${fullCode.length}`);
+      
+      if (!fullCode || fullCode.trim().length === 0) {
+        console.error('[Generate] No se recibió código generado', { chunkCount, fullCodeLength: fullCode.length });
+        setGeneratedCode(`// Error: No se recibió código de la API\n// Chunks recibidos: ${chunkCount}\n// Longitud del código: ${fullCode.length}\n//\n// Posibles causas:\n// 1. GEMINI_API_KEY no configurada o inválida en el servidor\n// 2. Problema de conexión con Gemini API\n// 3. El modelo no generó contenido (revisa los logs del servidor)\n//\n// Por favor:\n// 1. Verifica que GEMINI_API_KEY esté configurada en Vercel\n// 2. Revisa los logs del servidor en el dashboard de Vercel\n// 3. Intenta nuevamente\n// 4. Si el problema persiste, contacta al administrador`);
+      }
+    } catch (error) {
+      console.error('[Generate] Error generando contrato:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      setGeneratedCode(`// Error al generar contrato\n// ${errorMessage}\n\n// Por favor, verifica:\n// 1. Que GEMINI_API_KEY esté configurada en el servidor\n// 2. Tu conexión a internet\n// 3. Intenta nuevamente\n\n// Detalles del error:\nconsole.error('${errorMessage}');`);
+    } finally {
       setIsGenerating(false);
-    }, 3000);
+    }
   };
 
   const copyCode = () => {
@@ -160,8 +123,8 @@ pub mod generated_contract {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Volver al inicio
             </Link>
-            <h1 className="text-4xl font-bold text-white mb-2 flex items-center">
-              <Sparkles className="w-8 h-8 mr-3 text-purple-400" />
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 flex items-center flex-wrap gap-2">
+              <Sparkles className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-purple-400" />
               Generador de Contratos IA
             </h1>
             <p className="text-gray-400">Genera contratos inteligentes con inteligencia artificial</p>
@@ -175,8 +138,8 @@ pub mod generated_contract {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <Card className="p-6 bg-slate-800/50 border-slate-700">
-                <h2 className="text-xl font-semibold text-white mb-4 flex items-center">
-                  <Brain className="w-5 h-5 mr-2 text-purple-400" />
+                <h2 className="text-lg sm:text-xl font-semibold text-white mb-4 flex items-center flex-wrap gap-2">
+                  <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
                   Describe tu contrato
                 </h2>
                 
@@ -189,7 +152,7 @@ pub mod generated_contract {
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
                       placeholder="Ejemplo: Crea un contrato de token ERC-20 con funciones de mint, burn y transfer..."
-                      className="min-h-[200px]"
+                      className="min-h-[120px] xs:min-h-[150px] sm:min-h-[180px] md:min-h-[200px] lg:min-h-[250px]"
                       disabled={isGenerating}
                     />
                   </div>
@@ -200,6 +163,8 @@ pub mod generated_contract {
                         Lenguaje
                       </label>
                       <select 
+                        value={language}
+                        onChange={(e) => setLanguage(e.target.value)}
                         className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
                         disabled={isGenerating}
                       >
@@ -213,12 +178,14 @@ pub mod generated_contract {
                         Complejidad
                       </label>
                       <select 
+                        value={complexity}
+                        onChange={(e) => setComplexity(e.target.value)}
                         className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
                         disabled={isGenerating}
                       >
                         <option value="simple">Simple</option>
-                        <option value="intermediate">Intermedio</option>
-                        <option value="advanced">Avanzado</option>
+                        <option value="intermedio">Intermedio</option>
+                        <option value="avanzado">Avanzado</option>
                       </select>
                     </div>
                   </div>
@@ -283,8 +250,8 @@ pub mod generated_contract {
             >
               <Card className="p-6 bg-slate-800/50 border-slate-700 h-full">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-white flex items-center">
-                    <Code className="w-5 h-5 mr-2 text-purple-400" />
+                  <h2 className="text-lg sm:text-xl font-semibold text-white flex items-center flex-wrap gap-2">
+                    <Code className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
                     Código Generado
                   </h2>
                   {generatedCode && (
@@ -318,7 +285,7 @@ pub mod generated_contract {
                   )}
                 </div>
 
-                <div className="h-[500px] overflow-auto">
+                <div className="h-[300px] xs:h-[350px] sm:h-[400px] md:h-[500px] lg:h-[600px] min-h-[250px] overflow-auto">
                   {isGenerating ? (
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center">

@@ -17,7 +17,9 @@ import {
   Copy,
   RefreshCw,
   Globe,
-  Zap
+  Zap,
+  Brain,
+  MessageCircle
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -35,9 +37,13 @@ export default function DeployPage() {
   const [isClient, setIsClient] = useState(false);
   const [contractCode, setContractCode] = useState('');
   const [contractName, setContractName] = useState('');
+  const [selectedNetwork, setSelectedNetwork] = useState<'paseo' | 'westend' | 'polkadot'>('paseo');
   const [isDeploying, setIsDeploying] = useState(false);
   const [deployments, setDeployments] = useState<Deployment[]>([]);
   const [currentDeployment, setCurrentDeployment] = useState<Deployment | null>(null);
+  const [deploymentQuestion, setDeploymentQuestion] = useState('');
+  const [deploymentAnswer, setDeploymentAnswer] = useState('');
+  const [isAskingAssistant, setIsAskingAssistant] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -83,7 +89,15 @@ export default function DeployPage() {
     setTimeout(() => {
       deployment.status = 'success';
       deployment.contractAddress = '0x' + Math.random().toString(16).substr(2, 40);
-      deployment.explorerUrl = `https://polkadot.js.org/apps/?rpc=wss://paseo.rpc.amforc.com#/explorer/query/${deployment.contractAddress}`;
+      
+      // Generar URL del explorador según la red seleccionada
+      const rpcUrl = selectedNetwork === 'paseo' 
+        ? 'wss://paseo.rpc.amforc.com'
+        : selectedNetwork === 'westend'
+        ? 'wss://westend-rpc.polkadot.io'
+        : 'wss://rpc.polkadot.io';
+      
+      deployment.explorerUrl = `https://polkadot.js.org/apps/?rpc=${rpcUrl}#/explorer/query/${deployment.contractAddress}`;
       
       setDeployments(prev => [deployment, ...prev]);
       setCurrentDeployment(null);
@@ -126,6 +140,63 @@ export default function DeployPage() {
     }
   };
 
+  const handleAskAssistant = async () => {
+    if (!deploymentQuestion.trim() || isAskingAssistant) return;
+
+    setIsAskingAssistant(true);
+    setDeploymentAnswer('');
+
+    try {
+      const response = await fetch('/api/deployment-assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contractCode: contractCode || '',
+          question: deploymentQuestion
+        })
+      });
+
+      if (!response.ok) throw new Error('Error consultando asistente');
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) throw new Error('No se pudo leer la respuesta');
+
+      let fullAnswer = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') break;
+            
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.error) throw new Error(parsed.error);
+              if (parsed.content) {
+                fullAnswer += parsed.content;
+                setDeploymentAnswer(fullAnswer);
+              }
+            } catch (e) {
+              // Ignorar errores de parsing menores
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error consultando asistente:', error);
+      setDeploymentAnswer(`Error: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    } finally {
+      setIsAskingAssistant(false);
+    }
+  };
+
   return (
     <div className="min-h-screen relative overflow-hidden">
       <NeuralBackground />
@@ -143,11 +214,11 @@ export default function DeployPage() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Volver al inicio
             </Link>
-            <h1 className="text-4xl font-bold text-white mb-2 flex items-center">
-              <Rocket className="w-8 h-8 mr-3 text-purple-400" />
-              Deploy a Paseo
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 flex items-center flex-wrap gap-2">
+              <Rocket className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-purple-400" />
+              Deploy de Contratos
             </h1>
-            <p className="text-gray-400">Despliega tus contratos en la testnet de Paseo</p>
+            <p className="text-gray-400">Despliega tus contratos en Paseo Testnet, Westend Testnet o Polkadot Mainnet</p>
           </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -158,8 +229,8 @@ export default function DeployPage() {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <Card className="p-6 bg-slate-800/50 border-slate-700">
-                <h2 className="text-xl font-semibold text-white mb-4 flex items-center">
-                  <Upload className="w-5 h-5 mr-2 text-purple-400" />
+                <h2 className="text-lg sm:text-xl font-semibold text-white mb-4 flex items-center flex-wrap gap-2">
+                  <Upload className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
                   Configuración de Deploy
                 </h2>
                 
@@ -184,7 +255,7 @@ export default function DeployPage() {
                       value={contractCode}
                       onChange={(e) => setContractCode(e.target.value)}
                       placeholder="Pega aquí el código de tu contrato Rust/Ink!"
-                      className="min-h-[300px] font-mono text-sm"
+                      className="min-h-[200px] xs:min-h-[250px] sm:min-h-[300px] md:min-h-[350px] lg:min-h-[400px] font-mono text-xs sm:text-sm"
                       disabled={isDeploying}
                     />
                   </div>
@@ -192,16 +263,23 @@ export default function DeployPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Red
+                        Red de Deployment
                       </label>
                       <select 
+                        value={selectedNetwork}
+                        onChange={(e) => setSelectedNetwork(e.target.value as 'paseo' | 'westend' | 'polkadot')}
                         className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
                         disabled={isDeploying}
                       >
-                        <option value="paseo">Paseo Testnet</option>
-                        <option value="westend">Westend Testnet</option>
-                        <option value="polkadot">Polkadot Mainnet</option>
+                        <option value="paseo">Paseo Testnet (Recomendado para desarrollo)</option>
+                        <option value="westend">Westend Testnet (Pruebas de protocolo)</option>
+                        <option value="polkadot">Polkadot Mainnet (Producción)</option>
                       </select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {selectedNetwork === 'paseo' && 'Testnet para desarrollo de parachains y dApps'}
+                        {selectedNetwork === 'westend' && 'Testnet para pruebas a nivel de protocolo'}
+                        {selectedNetwork === 'polkadot' && '⚠️ Red de producción - tokens con valor real'}
+                      </p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -246,21 +324,57 @@ export default function DeployPage() {
                 <Card className="p-4 bg-slate-800/50 border-slate-700">
                   <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
                     <Globe className="w-5 h-5 mr-2 text-blue-400" />
-                    Información de Red
+                    Información de Red: {
+                      selectedNetwork === 'paseo' ? 'Paseo Testnet' :
+                      selectedNetwork === 'westend' ? 'Westend Testnet' :
+                      'Polkadot Mainnet'
+                    }
                   </h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-400">Red:</span>
-                      <span className="text-white">Paseo Testnet</span>
+                      <span className="text-white font-medium">
+                        {selectedNetwork === 'paseo' ? 'Paseo Testnet' :
+                         selectedNetwork === 'westend' ? 'Westend Testnet' :
+                         'Polkadot Mainnet'}
+                      </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-400">RPC:</span>
-                      <span className="text-white">wss://paseo.rpc.amforc.com</span>
+                      <span className="text-gray-400">Símbolo:</span>
+                      <span className="text-white">
+                        {selectedNetwork === 'paseo' ? 'PAS' :
+                         selectedNetwork === 'westend' ? 'WND' :
+                         'DOT'}
+                      </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Explorer:</span>
+                      <span className="text-gray-400">Tipo:</span>
+                      <span className={`font-medium ${
+                        selectedNetwork === 'polkadot' ? 'text-orange-400' : 'text-green-400'
+                      }`}>
+                        {selectedNetwork === 'polkadot' ? 'Mainnet (Producción)' : 'Testnet (Sin valor económico)'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-start">
+                      <span className="text-gray-400">RPC Endpoint:</span>
+                      <div className="text-right">
+                        <code className="text-purple-400 text-xs break-all">
+                          {selectedNetwork === 'paseo' ? 'wss://paseo.rpc.amforc.com' :
+                           selectedNetwork === 'westend' ? 'wss://westend-rpc.polkadot.io' :
+                           'wss://rpc.polkadot.io'}
+                        </code>
+                      </div>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Explorador:</span>
                       <a 
-                        href="https://polkadot.js.org/apps/?rpc=wss://paseo.rpc.amforc.com" 
+                        href={
+                          selectedNetwork === 'paseo' 
+                            ? 'https://polkadot.js.org/apps/?rpc=wss://paseo.rpc.amforc.com'
+                            : selectedNetwork === 'westend'
+                            ? 'https://polkadot.js.org/apps/?rpc=wss://westend-rpc.polkadot.io'
+                            : 'https://polkadot.js.org/apps/?rpc=wss://rpc.polkadot.io'
+                        }
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="text-purple-400 hover:text-purple-300 flex items-center"
@@ -268,6 +382,100 @@ export default function DeployPage() {
                         Abrir <ExternalLink className="w-3 h-3 ml-1" />
                       </a>
                     </div>
+                    {selectedNetwork !== 'polkadot' && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Faucet:</span>
+                        <a 
+                          href="https://faucet.polkadot.io/"
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-purple-400 hover:text-purple-300 flex items-center"
+                        >
+                          Obtener tokens <ExternalLink className="w-3 h-3 ml-1" />
+                        </a>
+                      </div>
+                    )}
+                    {selectedNetwork === 'polkadot' && (
+                      <div className="mt-3 p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                        <p className="text-xs text-orange-400 flex items-start">
+                          <AlertCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                          <span>
+                            <strong>Advertencia:</strong> Esta es la red de producción. Los tokens DOT tienen valor económico real. 
+                            Asegúrate de haber probado exhaustivamente en testnets antes de desplegar aquí.
+                          </span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              </motion.div>
+
+              {/* Deployment Assistant */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.6 }}
+                className="mt-6"
+              >
+                <Card className="p-4 bg-slate-800/50 border-slate-700">
+                  <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
+                    <Brain className="w-5 h-5 mr-2 text-purple-400" />
+                    Asistente de Deployment IA
+                  </h3>
+                  <p className="text-gray-400 text-sm mb-4">Haz preguntas sobre deployment y obtén ayuda personalizada</p>
+                  
+                  <div className="space-y-3">
+                    <Input
+                      value={deploymentQuestion}
+                      onChange={(e) => setDeploymentQuestion(e.target.value)}
+                      placeholder="Ejemplo: ¿Cómo preparo mi contrato para deployment?"
+                      className="w-full"
+                      disabled={isAskingAssistant}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleAskAssistant();
+                        }
+                      }}
+                    />
+                    <Button
+                      onClick={handleAskAssistant}
+                      disabled={!deploymentQuestion.trim() || isAskingAssistant}
+                      variant="primary"
+                      className="w-full flex items-center justify-center"
+                    >
+                      {isAskingAssistant ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          Consultando...
+                        </>
+                      ) : (
+                        <>
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                          Consultar Asistente
+                        </>
+                      )}
+                    </Button>
+                    
+                    {deploymentAnswer && (
+                      <div className="mt-4 p-4 bg-slate-900 rounded-lg border border-slate-700">
+                        <div className="prose prose-invert max-w-none">
+                          <div 
+                            className="text-gray-300 whitespace-pre-wrap text-sm"
+                            dangerouslySetInnerHTML={{ 
+                              __html: deploymentAnswer
+                                .replace(/```rust\n([\s\S]*?)\n```/g, '<pre class="bg-slate-800 p-3 rounded-lg overflow-x-auto"><code class="text-xs">$1</code></pre>')
+                                .replace(/```([\s\S]*?)```/g, '<pre class="bg-slate-800 p-3 rounded-lg overflow-x-auto"><code class="text-xs">$1</code></pre>')
+                                .replace(/### (.*)/g, '<h3 class="text-base font-semibold text-white mt-4 mb-2">$1</h3>')
+                                .replace(/## (.*)/g, '<h2 class="text-lg font-semibold text-white mt-6 mb-3">$1</h2>')
+                                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
+                                .replace(/\*(.*?)\*/g, '<em class="text-purple-300">$1</em>')
+                                .replace(/`(.*?)`/g, '<code class="bg-slate-700 px-1 py-0.5 rounded text-xs">$1</code>')
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </Card>
               </motion.div>
@@ -323,7 +531,7 @@ export default function DeployPage() {
                     <p className="text-sm text-gray-500 mt-2">Los deploys aparecerán aquí</p>
                   </div>
                 ) : (
-                  <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                  <div className="space-y-3 max-h-[250px] xs:max-h-[300px] sm:max-h-[350px] md:max-h-[400px] lg:max-h-[500px] overflow-y-auto">
                     {deployments.map((deployment) => (
                       <div key={deployment.id} className="p-4 bg-slate-700/50 rounded-lg">
                         <div className="flex items-center justify-between mb-2">

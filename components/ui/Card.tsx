@@ -9,7 +9,7 @@ export function Card({ children, className, ...props }: CardProps) {
   return (
     <div
       className={cn(
-        'glass glass-hover p-6 relative overflow-hidden',
+        'glass glass-hover p-4 sm:p-6 relative overflow-hidden',
         className
       )}
       {...props}

@@ -48,80 +48,47 @@ export default function ExplainPage() {
     setIsExplaining(true);
     setExplanation('');
 
-    // Simulate AI explanation
-    setTimeout(() => {
-      const mockExplanation = `## Análisis del Código
-
-### Estructura General
-Este es un contrato inteligente escrito en **Ink!** (Rust para Polkadot) que implementa un token ERC-20 básico.
-
-### Componentes Principales
-
-#### 1. **Storage (Almacenamiento)**
-\`\`\`rust
-#[ink(storage)]
-pub struct Erc20 {
-    total_supply: Balance,
-    balances: Mapping<AccountId, Balance>,
-    allowances: Mapping<(AccountId, AccountId), Balance>,
-    name: String,
-    symbol: String,
-    decimals: u8,
-}
-\`\`\`
-
-- **total_supply**: Cantidad total de tokens en circulación
-- **balances**: Mapeo de direcciones a sus balances
-- **allowances**: Permisos de gasto entre cuentas
-- **name/symbol/decimals**: Metadatos del token
-
-#### 2. **Constructor**
-\`\`\`rust
-#[ink(constructor)]
-pub fn new(initial_supply: Balance, name: String, symbol: String, decimals: u8) -> Self
-\`\`\`
-
-Inicializa el contrato con:
-- Suministro inicial de tokens
-- Metadatos del token
-- Asigna todos los tokens al creador
-
-#### 3. **Funciones Principales**
-
-**balance_of**: Consulta el balance de una dirección
-**transfer**: Transfiere tokens entre cuentas
-**approve**: Autoriza a otra cuenta a gastar tokens
-**transfer_from**: Transfiere tokens en nombre de otra cuenta
-
-### Eventos
-- **Transfer**: Se emite cuando hay transferencias
-- **Approval**: Se emite cuando se aprueban gastos
-
-### Seguridad
-- Verificaciones de balance antes de transferir
-- Control de permisos en transfer_from
-- Emisión de eventos para transparencia
-
-### Casos de Uso
-1. **Crear un token personalizado**
-2. **Implementar un sistema de pagos**
-3. **Construir aplicaciones DeFi**
-4. **Crear sistemas de recompensas**
-
-### Mejoras Posibles
-- Implementar pausa/despausa
-- Agregar funciones de burn
-- Implementar roles de administrador
-- Añadir límites de transferencia
-
-### Recursos Adicionales
-- [Documentación de Ink!](https://use.ink/)
-- [Guía de ERC-20](https://eips.ethereum.org/EIPS/eip-20)
-- [Polkadot.js Apps](https://polkadot.js.org/apps/)`;
-
-      setExplanation(mockExplanation);
+    try {
+      console.log('[Explain] Iniciando explicación...');
+      // Usar la API de Gemini
+      const { explainCode } = await import('@/lib/api-client');
+      
+      let fullExplanation = '';
+      let chunkCount = 0;
+      
+      console.log('[Explain] Iniciando stream...');
+      for await (const chunk of explainCode({
+        code: codeInput,
+        focus: 'general'
+      })) {
+        chunkCount++;
+        fullExplanation += chunk;
+        console.log(`[Explain] Chunk ${chunkCount} recibido, longitud total: ${fullExplanation.length}`);
+        // Forzar actualización del estado con el nuevo valor
+        setExplanation(prev => {
+          const newValue = fullExplanation;
+          console.log(`[Explain] Actualizando estado. Longitud: ${newValue.length}`);
+          return newValue;
+        });
+      }
+      
+      console.log(`[Explain] Stream completado. Total chunks: ${chunkCount}, Longitud final: ${fullExplanation.length}`);
+      
+      // Asegurar que el estado final se actualice
+      if (fullExplanation && fullExplanation.trim().length > 0) {
+        setExplanation(fullExplanation);
+        console.log('[Explain] Estado final actualizado');
+      } else {
+        console.error('[Explain] No se recibió explicación');
+        setExplanation(`# Error\n\nNo se recibió explicación del servidor.\n\nPor favor, verifica:\n1. Que GEMINI_API_KEY esté configurada\n2. Tu conexión a internet\n3. Intenta nuevamente`);
+      }
+    } catch (error) {
+      console.error('[Explain] Error explicando código:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      setExplanation(`# Error\n\n${errorMessage}\n\nPor favor, verifica tu conexión e intenta nuevamente.`);
+    } finally {
       setIsExplaining(false);
-    }, 3000);
+    }
   };
 
   const copyExplanation = () => {
@@ -219,8 +186,8 @@ pub mod dao {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Volver al inicio
             </Link>
-            <h1 className="text-4xl font-bold text-white mb-2 flex items-center">
-              <HelpCircle className="w-8 h-8 mr-3 text-purple-400" />
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 flex items-center flex-wrap gap-2">
+              <HelpCircle className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-purple-400" />
               Explicador de Código IA
             </h1>
             <p className="text-gray-400">Entiende cualquier código de contrato inteligente</p>
@@ -234,8 +201,8 @@ pub mod dao {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <Card className="p-6 bg-slate-800/50 border-slate-700">
-                <h2 className="text-xl font-semibold text-white mb-4 flex items-center">
-                  <Code className="w-5 h-5 mr-2 text-purple-400" />
+                <h2 className="text-lg sm:text-xl font-semibold text-white mb-4 flex items-center flex-wrap gap-2">
+                  <Code className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
                   Código a Explicar
                 </h2>
                 
@@ -248,7 +215,7 @@ pub mod dao {
                       value={codeInput}
                       onChange={(e) => setCodeInput(e.target.value)}
                       placeholder="Pega aquí el código de tu contrato inteligente..."
-                      className="min-h-[300px] font-mono text-sm"
+                      className="min-h-[200px] xs:min-h-[250px] sm:min-h-[300px] md:min-h-[350px] lg:min-h-[400px] font-mono text-xs sm:text-sm"
                       disabled={isExplaining}
                     />
                   </div>
@@ -343,8 +310,8 @@ pub mod dao {
             >
               <Card className="p-6 bg-slate-800/50 border-slate-700 h-full">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-white flex items-center">
-                    <Lightbulb className="w-5 h-5 mr-2 text-purple-400" />
+                  <h2 className="text-lg sm:text-xl font-semibold text-white flex items-center flex-wrap gap-2">
+                    <Lightbulb className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
                     Explicación
                   </h2>
                   {explanation && (
@@ -378,8 +345,8 @@ pub mod dao {
                   )}
                 </div>
 
-                <div className="h-[500px] overflow-auto">
-                  {isExplaining ? (
+                <div className="h-[300px] xs:h-[350px] sm:h-[400px] md:h-[500px] lg:h-[600px] min-h-[250px] overflow-auto">
+                  {isExplaining && !explanation ? (
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center">
                         <RefreshCw className="w-8 h-8 text-purple-400 animate-spin mx-auto mb-4" />
@@ -389,19 +356,15 @@ pub mod dao {
                     </div>
                   ) : explanation ? (
                     <div className="prose prose-invert max-w-none">
-                      <div 
-                        className="text-gray-300 whitespace-pre-wrap"
-                        dangerouslySetInnerHTML={{ 
-                          __html: explanation
-                            .replace(/```rust\n([\s\S]*?)\n```/g, '<pre class="bg-slate-900 p-4 rounded-lg overflow-x-auto"><code class="text-sm">$1</code></pre>')
-                            .replace(/```([\s\S]*?)```/g, '<pre class="bg-slate-900 p-4 rounded-lg overflow-x-auto"><code class="text-sm">$1</code></pre>')
-                            .replace(/### (.*)/g, '<h3 class="text-lg font-semibold text-white mt-6 mb-3">$1</h3>')
-                            .replace(/## (.*)/g, '<h2 class="text-xl font-semibold text-white mt-8 mb-4">$1</h2>')
-                            .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
-                            .replace(/\*(.*?)\*/g, '<em class="text-purple-300">$1</em>')
-                            .replace(/`(.*?)`/g, '<code class="bg-slate-700 px-1 py-0.5 rounded text-sm">$1</code>')
-                        }}
-                      />
+                      <div className="text-gray-300 whitespace-pre-wrap break-words font-sans text-sm leading-relaxed">
+                        {explanation}
+                      </div>
+                      {isExplaining && (
+                        <div className="mt-4 flex items-center text-purple-400 text-sm">
+                          <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                          <span>Generando más contenido...</span>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="flex items-center justify-center h-full">

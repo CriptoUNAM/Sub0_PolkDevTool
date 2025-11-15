@@ -46,7 +46,7 @@ export function CodeBlock({
         </Button>
       </div>
       
-      <pre className="w-full p-4 bg-slate-900/50 border border-white/20 rounded-xl text-white font-mono text-sm leading-relaxed overflow-x-auto">
+      <pre className="w-full p-3 sm:p-4 bg-slate-900/50 border border-white/20 rounded-xl text-white font-mono text-xs sm:text-sm leading-relaxed overflow-x-auto">
         <code className="text-gray-300">
           {code}
         </code>

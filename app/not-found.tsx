@@ -1,5 +1,8 @@
 'use client';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 import Link from 'next/link';
 import { Home, ArrowLeft } from 'lucide-react';
 
@@ -29,7 +32,11 @@ export default function NotFound() {
           </Link>
           
           <button 
-            onClick={() => window.history.back()}
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                window.history.back();
+              }
+            }}
             className="inline-flex items-center justify-center w-full px-6 py-3 bg-slate-800 text-white font-medium rounded-lg hover:bg-slate-700 transition-all duration-300 border border-slate-600"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />

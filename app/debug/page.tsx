@@ -1,5 +1,8 @@
 'use client';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { NeuralBackground } from '@/components/backgrounds/NeuralBackground';
@@ -61,50 +64,41 @@ export default function DebugPage() {
     setIsAnalyzing(true);
     setDebugResults([]);
 
-    // Simulate debug analysis
-    setTimeout(() => {
-      const mockIssues: DebugIssue[] = [
-        {
-          id: '1',
-          type: 'error',
-          message: 'Variable "value" is not defined',
-          line: 15,
-          column: 8,
-          suggestion: 'Declare the variable before using it: let value: i32 = 0;',
-          severity: 'high'
-        },
-        {
-          id: '2',
-          type: 'warning',
-          message: 'Unused import: std::collections::HashMap',
-          line: 2,
-          column: 1,
-          suggestion: 'Remove unused import or use it in your code',
-          severity: 'medium'
-        },
-        {
-          id: '3',
-          type: 'info',
-          message: 'Consider adding error handling for external calls',
-          line: 25,
-          column: 12,
-          suggestion: 'Wrap external calls in Result<T, E> for better error handling',
-          severity: 'low'
-        },
-        {
-          id: '4',
-          type: 'warning',
-          message: 'Function "calculate" could panic on division by zero',
-          line: 30,
-          column: 15,
-          suggestion: 'Add a check: if divisor == 0 { return Err("Division by zero"); }',
-          severity: 'medium'
-        }
-      ];
+    try {
+      // Usar la API de Gemini
+      const { debugError } = await import('@/lib/api-client');
+      
+      let debugText = '';
+      for await (const chunk of debugError({
+        errorMessage: 'Análisis de código solicitado',
+        code: codeInput,
+        context: 'Análisis completo del código para encontrar errores y mejoras'
+      })) {
+        debugText += chunk;
+      }
 
-      setDebugResults(mockIssues);
+      // Convertir la respuesta de texto a formato DebugIssue[]
+      // Por ahora, crear un issue con toda la respuesta
+      const issues: DebugIssue[] = [{
+        id: '1',
+        type: 'info',
+        message: 'Análisis completado',
+        suggestion: debugText,
+        severity: 'low'
+      }];
+      
+      setDebugResults(issues);
+    } catch (error) {
+      console.error('Error debuggeando:', error);
+      setDebugResults([{
+        id: 'error',
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Error desconocido',
+        severity: 'high'
+      }]);
+    } finally {
       setIsAnalyzing(false);
-    }, 3000);
+    }
   };
 
   const copyCode = () => {
@@ -279,8 +273,8 @@ pub mod clean_contract {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Volver al inicio
             </Link>
-            <h1 className="text-4xl font-bold text-white mb-2 flex items-center">
-              <Bug className="w-8 h-8 mr-3 text-purple-400" />
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 flex items-center flex-wrap gap-2">
+              <Bug className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-purple-400" />
               Debug Assistant
             </h1>
             <p className="text-gray-400">Encuentra y corrige errores en tu código</p>
@@ -295,8 +289,8 @@ pub mod clean_contract {
             >
               <Card className="p-6 bg-slate-800/50 border-slate-700">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-white flex items-center">
-                    <Code className="w-5 h-5 mr-2 text-purple-400" />
+                  <h2 className="text-lg sm:text-xl font-semibold text-white flex items-center flex-wrap gap-2">
+                    <Code className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
                     Código a Analizar
                   </h2>
                   <div className="flex space-x-2">
@@ -337,7 +331,7 @@ pub mod clean_contract {
                       value={codeInput}
                       onChange={(e) => setCodeInput(e.target.value)}
                       placeholder="Pega aquí el código que quieres analizar..."
-                      className="min-h-[400px] font-mono text-sm"
+                      className="min-h-[250px] xs:min-h-[300px] sm:min-h-[350px] md:min-h-[400px] lg:min-h-[500px] font-mono text-xs sm:text-sm"
                       disabled={isAnalyzing}
                     />
                   </div>
@@ -401,8 +395,8 @@ pub mod clean_contract {
             >
               <Card className="p-6 bg-slate-800/50 border-slate-700 h-full">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-white flex items-center">
-                    <Bug className="w-5 h-5 mr-2 text-purple-400" />
+                  <h2 className="text-lg sm:text-xl font-semibold text-white flex items-center flex-wrap gap-2">
+                    <Bug className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
                     Resultados del Debug
                   </h2>
                   {debugResults.length > 0 && (
@@ -414,7 +408,7 @@ pub mod clean_contract {
                   )}
                 </div>
 
-                <div className="h-[500px] overflow-auto">
+                <div className="h-[300px] xs:h-[350px] sm:h-[400px] md:h-[500px] lg:h-[600px] min-h-[250px] overflow-auto">
                   {isAnalyzing ? (
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center">

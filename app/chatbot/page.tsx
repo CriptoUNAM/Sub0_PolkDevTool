@@ -1,5 +1,8 @@
 'use client';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { NeuralBackground } from '@/components/backgrounds/NeuralBackground';
@@ -65,17 +68,43 @@ export default function ChatbotPage() {
     setInputValue('');
     setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      // Usar la API de Gemini
+      const { chat } = await import('@/lib/api-client');
+      
+      // Construir historial de conversación
+      const history = messages.map(msg => ({
+        role: msg.isUser ? 'user' as const : 'model' as const,
+        parts: msg.text
+      }));
+
+      let aiResponse = '';
+      for await (const chunk of chat({
+        message: inputValue,
+        history
+      })) {
+        aiResponse += chunk;
+      }
+
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: 'Esta es una respuesta simulada del asistente. En una implementación real, aquí se conectaría con un modelo de IA.',
+        text: aiResponse,
         isUser: false,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error('Error en chat:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: `Error: ${error instanceof Error ? error.message : 'Error desconocido'}. Por favor, intenta nuevamente.`,
+        isUser: false,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -102,8 +131,8 @@ export default function ChatbotPage() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Volver al inicio
             </Link>
-            <h1 className="text-4xl font-bold text-white mb-2 flex items-center">
-              <MessageCircle className="w-8 h-8 mr-3 text-purple-400" />
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 flex items-center flex-wrap gap-2">
+              <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-purple-400" />
               Asistente IA
             </h1>
             <p className="text-gray-400">Tu compañero de desarrollo en Polkadot</p>
@@ -114,7 +143,7 @@ export default function ChatbotPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="h-[600px] flex flex-col"
+            className="h-[calc(100vh-10rem)] xs:h-[calc(100vh-12rem)] sm:h-[500px] md:h-[600px] lg:h-[700px] min-h-[350px] max-h-[90vh] flex flex-col"
           >
             <Card className="flex-1 flex flex-col bg-slate-800/50 border-slate-700">
               {/* Messages */}
@@ -126,7 +155,7 @@ export default function ChatbotPage() {
                     animate={{ opacity: 1, y: 0 }}
                     className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div className={`flex items-start max-w-[80%] ${message.isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+                    <div className={`flex items-start max-w-[85%] sm:max-w-[80%] md:max-w-[75%] ${message.isUser ? 'flex-row-reverse' : 'flex-row'}`}>
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                         message.isUser ? 'bg-purple-500 ml-2' : 'bg-blue-500 mr-2'
                       }`}>

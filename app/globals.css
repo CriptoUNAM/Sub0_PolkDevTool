@@ -21,6 +21,8 @@
   .glass {
     @apply backdrop-blur-xl bg-white/10 border border-white/20 
            shadow-2xl rounded-xl sm:rounded-2xl;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
   }
   
   .glass-hover {
@@ -29,18 +31,53 @@
            hover:scale-105;
   }
   
+  .glass-strong {
+    @apply backdrop-blur-2xl;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
+    box-shadow: 
+      0 8px 32px 0 rgba(139, 92, 246, 0.2),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+  
   .gradient-text {
     @apply bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 
            bg-clip-text text-transparent;
+    background-size: 200% 200%;
+    animation: gradient-shift 3s ease infinite;
   }
   
   .gradient-border {
-    @apply border-2 border-transparent bg-gradient-to-r 
-           from-purple-500 to-cyan-500 bg-clip-border;
+    @apply border-2 border-transparent;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.5), rgba(236, 72, 153, 0.5), rgba(6, 182, 212, 0.5));
+    background-clip: padding-box;
+    border-image: linear-gradient(135deg, rgba(139, 92, 246, 0.5), rgba(236, 72, 153, 0.5), rgba(6, 182, 212, 0.5)) 1;
   }
   
   .neural-glow {
-    @apply shadow-[0_0_50px_rgba(139,92,246,0.3)];
+    box-shadow: 
+      0 0 50px rgba(139, 92, 246, 0.3),
+      0 0 100px rgba(236, 72, 153, 0.2),
+      0 0 150px rgba(6, 182, 212, 0.1);
+  }
+  
+  .neural-glow-hover {
+    transition: box-shadow 0.3s ease;
+  }
+  
+  .neural-glow-hover:hover {
+    box-shadow: 
+      0 0 80px rgba(139, 92, 246, 0.5),
+      0 0 150px rgba(236, 72, 153, 0.3),
+      0 0 200px rgba(6, 182, 212, 0.2);
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
   }
 }
 
@@ -51,8 +88,32 @@
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(139,92,246,0.3); }
-  50% { box-shadow: 0 0 40px rgba(236,72,153,0.5); }
+  0%, 100% { 
+    box-shadow: 
+      0 0 20px rgba(139, 92, 246, 0.3),
+      0 0 40px rgba(236, 72, 153, 0.2);
+  }
+  50% { 
+    box-shadow: 
+      0 0 40px rgba(139, 92, 246, 0.5),
+      0 0 80px rgba(236, 72, 153, 0.4),
+      0 0 120px rgba(6, 182, 212, 0.2);
+  }
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+@keyframes neural-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
 }
 
 .animate-float {
@@ -61,4 +122,19 @@
 
 .animate-pulse-glow {
   animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 3s infinite;
+}
+
+.animate-neural-pulse {
+  animation: neural-pulse 4s ease-in-out infinite;
 }

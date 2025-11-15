@@ -421,7 +421,7 @@ const result = await contract.query.methodName(caller, {}, value);
                       animate={{ opacity: 1, y: 0 }}
                       className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
-                      <div className={`flex items-start space-x-2 max-w-[80%] ${message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                      <div className={`flex items-start space-x-2 max-w-[85%] sm:max-w-[80%] md:max-w-[75%] ${message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                           message.type === 'user' 
                             ? 'bg-gradient-to-r from-blue-500 to-cyan-500' 

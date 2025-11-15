@@ -1,4 +1,4 @@
-import { web3FromAddress, web3Accounts } from '@polkadot/extension-dapp';
+import { web3FromAddress, web3Accounts, web3Enable } from '@polkadot/extension-dapp';
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import type { Signer } from '@polkadot/api/types';
 
@@ -37,7 +37,20 @@ export class SubWalletService {
 
   async getAccounts(): Promise<SubWalletAccount[]> {
     try {
+      // Primero habilitar la extensión (requerido antes de web3Accounts)
+      const extensions = await web3Enable('Polkadot DevKit');
+      
+      if (!extensions || extensions.length === 0) {
+        throw new Error('No se encontró ninguna extensión de wallet. Por favor, instala SubWallet o Polkadot.js extension.');
+      }
+
+      // Ahora obtener las cuentas
       const accounts = await web3Accounts();
+      
+      if (!accounts || accounts.length === 0) {
+        throw new Error('No se encontraron cuentas. Por favor, crea una cuenta en tu wallet primero.');
+      }
+
       return accounts.map(account => ({
         address: account.address,
         name: account.meta.name || 'Unnamed Account',
@@ -46,6 +59,14 @@ export class SubWalletService {
       }));
     } catch (error) {
       console.error('Failed to get accounts:', error);
+      
+      if (error instanceof Error) {
+        // Re-lanzar errores específicos
+        if (error.message.includes('No se encontró') || error.message.includes('No se encontraron')) {
+          throw error;
+        }
+      }
+      
       throw new Error('No se pudieron obtener las cuentas de SubWallet');
     }
   }

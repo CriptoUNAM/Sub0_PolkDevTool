@@ -139,15 +139,15 @@ export function Footer() {
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-pink-500/5 to-cyan-500/10" />
         
-        <div className="container mx-auto px-4 py-8 sm:py-12">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+        <div className="container mx-auto px-3 xs:px-4 py-6 xs:py-8 sm:py-10 md:py-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 xs:gap-5 sm:gap-6 md:gap-8">
             {/* Brand Section */}
             <div className="lg:col-span-1">
               <div className="space-y-4">
-                <h3 className="text-xl sm:text-2xl font-bold gradient-text">
+                <h3 className="text-lg xs:text-xl sm:text-2xl font-bold gradient-text">
                   Polkadot DevKit
                 </h3>
-                <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
+                <p className="text-slate-300 text-xs xs:text-sm leading-relaxed">
                   Acelera tu desarrollo en Polkadot con IA. Genera contratos inteligentes, 
                   templates y herramientas de debugging con la potencia de la inteligencia artificial.
                 </p>
@@ -185,7 +185,7 @@ export function Footer() {
 
             {/* Quick Links */}
             <div>
-              <h4 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">Enlaces Rápidos</h4>
+              <h4 className="text-sm xs:text-base sm:text-lg font-semibold text-white mb-2 xs:mb-3 sm:mb-4">Enlaces Rápidos</h4>
               <ul className="space-y-3">
                 <li>
                   <Link 
@@ -312,12 +312,12 @@ export function Footer() {
           </div>
 
           {/* Bottom Section */}
-          <div className="mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-white/10">
-            <div className="flex flex-col sm:flex-row justify-between items-center space-y-3 sm:space-y-0">
-               <div className="text-slate-400 text-xs sm:text-sm text-center sm:text-left">
-                 © 2025 Polkadot DevKit. Made by PolkaDevKit Team. Todos los derechos reservados.
+          <div className="mt-6 xs:mt-8 sm:mt-10 md:mt-12 pt-4 xs:pt-6 sm:pt-8 border-t border-white/10">
+            <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 xs:space-y-3 sm:space-y-0 gap-2">
+               <div className="text-slate-400 text-[10px] xs:text-xs sm:text-sm text-center sm:text-left px-2">
+                 © 2025 Polkadot DevKit. Made by <span className="gradient-text font-semibold">CriptoUNAM</span>. Todos los derechos reservados.
                </div>
-              <div className="flex space-x-4 sm:space-x-6 text-xs sm:text-sm">
+              <div className="flex flex-wrap justify-center sm:justify-end gap-2 xs:gap-3 sm:gap-4 md:gap-6 text-[10px] xs:text-xs sm:text-sm">
                 <a 
                   href="/privacy" 
                   className="text-slate-400 hover:text-purple-400 transition-colors duration-300"

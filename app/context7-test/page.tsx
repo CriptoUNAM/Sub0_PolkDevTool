@@ -1,5 +1,8 @@
 'use client';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { NeuralBackground } from '@/components/backgrounds/NeuralBackground';
@@ -247,8 +250,8 @@ export default function Context7TestPage() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Volver al inicio
             </Link>
-            <h1 className="text-4xl font-bold text-white mb-2 flex items-center">
-              <Brain className="w-8 h-8 mr-3 text-purple-400" />
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 flex items-center flex-wrap gap-2">
+              <Brain className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-purple-400" />
               Context7 Test Suite
             </h1>
             <p className="text-gray-400">Prueba la integración con Context7 API</p>
@@ -263,8 +266,8 @@ export default function Context7TestPage() {
             >
               <Card className="p-6 bg-slate-800/50 border-slate-700">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-white flex items-center">
-                    <Code className="w-5 h-5 mr-2 text-purple-400" />
+                  <h2 className="text-lg sm:text-xl font-semibold text-white flex items-center flex-wrap gap-2">
+                    <Code className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
                     Consulta de Prueba
                   </h2>
                   <div className="flex space-x-2">
@@ -305,7 +308,7 @@ export default function Context7TestPage() {
                       value={testQuery}
                       onChange={(e) => setTestQuery(e.target.value)}
                       placeholder="Escribe aquí tu consulta para probar la API de Context7..."
-                      className="min-h-[200px]"
+                      className="min-h-[150px] sm:min-h-[200px] md:min-h-[250px]"
                       disabled={isRunning}
                     />
                   </div>
@@ -435,8 +438,8 @@ export default function Context7TestPage() {
             >
               <Card className="p-6 bg-slate-800/50 border-slate-700 h-full">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-white flex items-center">
-                    <TestTube className="w-5 h-5 mr-2 text-purple-400" />
+                  <h2 className="text-lg sm:text-xl font-semibold text-white flex items-center flex-wrap gap-2">
+                    <TestTube className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
                     Resultados de Tests
                   </h2>
                   {totalTests > 0 && (
@@ -448,7 +451,7 @@ export default function Context7TestPage() {
                   )}
                 </div>
 
-                <div className="h-[500px] overflow-auto">
+                <div className="h-[400px] sm:h-[500px] md:h-[600px] min-h-[300px] overflow-auto">
                   {isRunning ? (
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center">

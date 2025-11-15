@@ -18,7 +18,9 @@ import {
   Download,
   Code,
   Zap,
-  AlertTriangle
+  AlertTriangle,
+  Brain,
+  Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -34,8 +36,10 @@ interface TestResult {
 export default function TestPage() {
   const [isClient, setIsClient] = useState(false);
   const [testCode, setTestCode] = useState('');
+  const [contractCode, setContractCode] = useState('');
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
 
   useEffect(() => {
@@ -52,6 +56,63 @@ export default function TestPage() {
       </div>
     );
   }
+
+  const handleGenerateTests = async () => {
+    if (!contractCode.trim() || isGenerating) return;
+
+    setIsGenerating(true);
+    setTestCode('');
+
+    try {
+      const response = await fetch('/api/generate-tests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contractCode,
+          contractType: 'ink'
+        })
+      });
+
+      if (!response.ok) throw new Error('Error generando tests');
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) throw new Error('No se pudo leer la respuesta');
+
+      let fullTests = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') break;
+            
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.error) throw new Error(parsed.error);
+              if (parsed.content) {
+                fullTests += parsed.content;
+                setTestCode(fullTests);
+              }
+            } catch (e) {
+              // Ignorar errores de parsing menores
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error generando tests:', error);
+      setTestCode(`// Error: ${error instanceof Error ? error.message : 'Error desconocido'}\n// Por favor, verifica tu conexión e intenta nuevamente.`);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const handleRunTests = async () => {
     if (!testCode.trim() || isRunning) return;
@@ -275,24 +336,69 @@ fn transfer_emits_event() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Volver al inicio
             </Link>
-            <h1 className="text-4xl font-bold text-white mb-2 flex items-center">
-              <TestTube className="w-8 h-8 mr-3 text-purple-400" />
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 flex items-center flex-wrap gap-2">
+              <TestTube className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-purple-400" />
               Testing Suite
             </h1>
             <p className="text-gray-400">Ejecuta y valida tus tests de contratos</p>
           </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Test Code Input */}
+            {/* Contract & Test Code Input */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
+              className="space-y-6"
             >
+              {/* Contract Input */}
               <Card className="p-6 bg-slate-800/50 border-slate-700">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-white flex items-center">
-                    <Code className="w-5 h-5 mr-2 text-purple-400" />
+                  <h2 className="text-lg sm:text-xl font-semibold text-white flex items-center flex-wrap gap-2">
+                    <Code className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
+                    Código del Contrato
+                  </h2>
+                  <Button
+                    variant="primary"
+                    onClick={handleGenerateTests}
+                    disabled={!contractCode.trim() || isGenerating}
+                    className="flex items-center"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Generando...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Generar Tests con IA
+                      </>
+                    )}
+                  </Button>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Pega el código de tu contrato para generar tests automáticamente
+                    </label>
+                    <Textarea
+                      value={contractCode}
+                      onChange={(e) => setContractCode(e.target.value)}
+                      placeholder="Pega aquí el código de tu contrato Ink!..."
+                      className="min-h-[150px] xs:min-h-[200px] sm:min-h-[250px] md:min-h-[300px] font-mono text-xs sm:text-sm"
+                      disabled={isGenerating}
+                    />
+                  </div>
+                </div>
+              </Card>
+
+              {/* Test Code Input */}
+              <Card className="p-6 bg-slate-800/50 border-slate-700">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg sm:text-xl font-semibold text-white flex items-center flex-wrap gap-2">
+                    <TestTube className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
                     Código de Tests
                   </h2>
                   <div className="flex space-x-2">
@@ -332,8 +438,8 @@ fn transfer_emits_event() {
                     <Textarea
                       value={testCode}
                       onChange={(e) => setTestCode(e.target.value)}
-                      placeholder="Pega aquí tus tests de Ink!..."
-                      className="min-h-[400px] font-mono text-sm"
+                      placeholder="Pega aquí tus tests de Ink! o genera automáticamente desde arriba..."
+                      className="min-h-[250px] xs:min-h-[300px] sm:min-h-[350px] md:min-h-[400px] lg:min-h-[500px] font-mono text-xs sm:text-sm"
                       disabled={isRunning}
                     />
                   </div>
@@ -397,8 +503,8 @@ fn transfer_emits_event() {
             >
               <Card className="p-6 bg-slate-800/50 border-slate-700 h-full">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-white flex items-center">
-                    <TestTube className="w-5 h-5 mr-2 text-purple-400" />
+                  <h2 className="text-lg sm:text-xl font-semibold text-white flex items-center flex-wrap gap-2">
+                    <TestTube className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
                     Resultados
                   </h2>
                   {totalTests > 0 && (
@@ -410,7 +516,7 @@ fn transfer_emits_event() {
                   )}
                 </div>
 
-                <div className="h-[500px] overflow-auto">
+                <div className="h-[300px] xs:h-[350px] sm:h-[400px] md:h-[500px] lg:h-[600px] min-h-[250px] overflow-auto">
                   {testResults.length === 0 ? (
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center">

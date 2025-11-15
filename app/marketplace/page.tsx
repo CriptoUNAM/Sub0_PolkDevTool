@@ -17,7 +17,10 @@ import {
   List,
   Code,
   Zap,
-  Shield
+  Shield,
+  Brain,
+  RefreshCw,
+  Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -39,6 +42,9 @@ export default function MarketplacePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [intelligentSearchResult, setIntelligentSearchResult] = useState('');
+  const [isIntelligentSearching, setIsIntelligentSearching] = useState(false);
+  const [showIntelligentSearch, setShowIntelligentSearch] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -132,6 +138,47 @@ export default function MarketplacePage() {
 
   const categories = ['all', 'Tokens', 'NFT', 'Governance', 'DeFi', 'Bridge', 'Staking'];
 
+  const handleIntelligentSearch = async () => {
+    if (!searchTerm.trim() || isIntelligentSearching) return;
+
+    setIsIntelligentSearching(true);
+    setIntelligentSearchResult('');
+    setShowIntelligentSearch(true);
+
+    try {
+      console.log('[Marketplace] Iniciando búsqueda inteligente...');
+      const { marketplaceSearch } = await import('@/lib/api-client');
+      
+      const availableTemplates = templates.map(t => ({
+        title: t.title,
+        description: t.description,
+        category: t.category,
+        tags: t.tags
+      }));
+
+      let fullResult = '';
+      let chunkCount = 0;
+      
+      for await (const chunk of marketplaceSearch({
+        searchQuery: searchTerm,
+        availableTemplates
+      })) {
+        chunkCount++;
+        fullResult += chunk;
+        setIntelligentSearchResult(fullResult);
+        console.log(`[Marketplace] Chunk ${chunkCount} recibido, longitud total: ${fullResult.length}`);
+      }
+      
+      console.log(`[Marketplace] Búsqueda inteligente completada. Total chunks: ${chunkCount}`);
+    } catch (error) {
+      console.error('[Marketplace] Error en búsqueda inteligente:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      setIntelligentSearchResult(`Error: ${errorMessage}`);
+    } finally {
+      setIsIntelligentSearching(false);
+    }
+  };
+
   const filteredTemplates = templates.filter(template => {
     const matchesSearch = template.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          template.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -157,8 +204,8 @@ export default function MarketplacePage() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Volver al inicio
             </Link>
-            <h1 className="text-4xl font-bold text-white mb-2 flex items-center">
-              <Store className="w-8 h-8 mr-3 text-purple-400" />
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 flex items-center flex-wrap gap-2">
+              <Store className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-purple-400" />
               Marketplace
             </h1>
             <p className="text-gray-400">Descubre y descarga plantillas para tu proyecto</p>
@@ -171,17 +218,44 @@ export default function MarketplacePage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="mb-8"
           >
-            <div className="flex flex-col lg:flex-row gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row gap-3 xs:gap-4 mb-4 xs:mb-6">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Buscar plantillas..."
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setShowIntelligentSearch(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && e.shiftKey) {
+                      e.preventDefault();
+                      handleIntelligentSearch();
+                    }
+                  }}
+                  placeholder="Buscar plantillas... (Shift+Enter para búsqueda inteligente)"
                   className="pl-10"
                 />
               </div>
               <div className="flex gap-2">
+                <Button
+                  variant="primary"
+                  onClick={handleIntelligentSearch}
+                  disabled={!searchTerm.trim() || isIntelligentSearching}
+                  className="flex items-center"
+                >
+                  {isIntelligentSearching ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Buscando...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      IA
+                    </>
+                  )}
+                </Button>
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
@@ -204,7 +278,7 @@ export default function MarketplacePage() {
             </div>
 
             {/* Category Filters */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5 xs:gap-2">
               {categories.map(category => (
                 <Button
                   key={category}
@@ -218,14 +292,61 @@ export default function MarketplacePage() {
             </div>
           </motion.div>
 
+          {/* Intelligent Search Results */}
+          {showIntelligentSearch && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8"
+            >
+              <Card className="p-6 bg-slate-800/50 border-purple-500/30">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-white flex items-center">
+                    <Brain className="w-5 h-5 mr-2 text-purple-400" />
+                    Búsqueda Inteligente con IA
+                  </h2>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setShowIntelligentSearch(false)}
+                    className="text-sm"
+                  >
+                    Cerrar
+                  </Button>
+                </div>
+                <div className="text-gray-300 whitespace-pre-wrap">
+                  {isIntelligentSearching && !intelligentSearchResult ? (
+                    <div className="flex items-center justify-center py-8">
+                      <RefreshCw className="w-6 h-6 text-purple-400 animate-spin mr-2" />
+                      <span>Analizando con IA...</span>
+                    </div>
+                  ) : intelligentSearchResult ? (
+                    <div className="prose prose-invert max-w-none">
+                      <pre className="text-gray-300 whitespace-pre-wrap break-words font-sans text-sm leading-relaxed">
+                        {intelligentSearchResult}
+                      </pre>
+                      {isIntelligentSearching && (
+                        <div className="mt-4 flex items-center text-purple-400 text-sm">
+                          <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                          <span>Generando más contenido...</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400">No hay resultados aún</p>
+                  )}
+                </div>
+              </Card>
+            </motion.div>
+          )}
+
           {/* Templates Grid */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
             className={viewMode === 'grid' 
-              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
-              : "space-y-4"
+              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 xs:gap-5 sm:gap-6" 
+              : "space-y-3 xs:space-y-4"
             }
           >
             {filteredTemplates.map((template, index) => (

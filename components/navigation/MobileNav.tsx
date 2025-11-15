@@ -26,22 +26,37 @@ import { WalletConnect } from '@/components/wallet/WalletConnect';
 
 const NAVIGATION_ITEMS = [
   { name: 'Inicio', href: '/', icon: Home },
-  { name: 'Learning', href: '/learning', icon: GraduationCap },
   { 
-    name: 'Generar', 
+    name: 'Desarrollo', 
     href: '/generate', 
     icon: Brain,
     submenu: [
-      { name: 'Plantillas', href: '/templates', icon: Code }
+      { name: 'Generar', href: '/generate', icon: Brain },
+      { name: 'Plantillas', href: '/templates', icon: Code },
+      { name: 'Marketplace', href: '/marketplace', icon: Store },
     ]
   },
-  { name: 'Marketplace', href: '/marketplace', icon: Store },
-  { name: 'Explicar', href: '/explain', icon: FileText },
-  { name: 'Debug', href: '/debug', icon: Bug },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Docs', href: '/docs', icon: BookOpen },
+  { 
+    name: 'Herramientas', 
+    href: '/explain', 
+    icon: FileText,
+    submenu: [
+      { name: 'Explicar', href: '/explain', icon: FileText },
+      { name: 'Debug', href: '/debug', icon: Bug },
+      { name: 'Test', href: '/test', icon: TestTube },
+    ]
+  },
+  { 
+    name: 'Recursos', 
+    href: '/docs', 
+    icon: BookOpen,
+    submenu: [
+      { name: 'Learning', href: '/learning', icon: GraduationCap },
+      { name: 'Docs', href: '/docs', icon: BookOpen },
+      { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+    ]
+  },
   { name: 'Deploy', href: '/deploy', icon: Rocket },
-  { name: 'Test', href: '/test', icon: TestTube },
 ];
 
 interface MobileNavProps {

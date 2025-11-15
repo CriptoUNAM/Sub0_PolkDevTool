@@ -17,7 +17,10 @@ import {
   ChevronDown,
   Zap,
   Globe,
-  Shield
+  Shield,
+  Brain,
+  RefreshCw,
+  Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -38,6 +41,9 @@ export default function DocsPage() {
   const [isClient, setIsClient] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [intelligentSearchResult, setIntelligentSearchResult] = useState('');
+  const [isIntelligentSearching, setIsIntelligentSearching] = useState(false);
+  const [showIntelligentSearch, setShowIntelligentSearch] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -267,6 +273,45 @@ if value < 0 {
     }
   ];
 
+  const handleIntelligentSearch = async () => {
+    if (!searchTerm.trim() || isIntelligentSearching) return;
+
+    setIsIntelligentSearching(true);
+    setIntelligentSearchResult('');
+    setShowIntelligentSearch(true);
+
+    try {
+      console.log('[Docs] Iniciando búsqueda inteligente...');
+      const { docsSearch } = await import('@/lib/api-client');
+      
+      const docSectionsData = docSections.map(s => ({
+        title: s.title,
+        description: s.description
+      }));
+
+      let fullResult = '';
+      let chunkCount = 0;
+      
+      for await (const chunk of docsSearch({
+        searchQuery: searchTerm,
+        docSections: docSectionsData
+      })) {
+        chunkCount++;
+        fullResult += chunk;
+        setIntelligentSearchResult(fullResult);
+        console.log(`[Docs] Chunk ${chunkCount} recibido, longitud total: ${fullResult.length}`);
+      }
+      
+      console.log(`[Docs] Búsqueda inteligente completada. Total chunks: ${chunkCount}`);
+    } catch (error) {
+      console.error('[Docs] Error en búsqueda inteligente:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      setIntelligentSearchResult(`Error: ${errorMessage}`);
+    } finally {
+      setIsIntelligentSearching(false);
+    }
+  };
+
   const filteredSections = docSections.filter(section =>
     section.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     section.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -293,8 +338,8 @@ if value < 0 {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Volver al inicio
             </Link>
-            <h1 className="text-4xl font-bold text-white mb-2 flex items-center">
-              <BookOpen className="w-8 h-8 mr-3 text-purple-400" />
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 flex items-center flex-wrap gap-2">
+              <BookOpen className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-purple-400" />
               Documentación
             </h1>
             <p className="text-gray-400">Guía completa para desarrollar en Polkadot</p>
@@ -307,16 +352,92 @@ if value < 0 {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="mb-8"
           >
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar en la documentación..."
-                className="pl-10"
-              />
+            <div className="flex gap-4 max-w-2xl">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setShowIntelligentSearch(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && e.shiftKey) {
+                      e.preventDefault();
+                      handleIntelligentSearch();
+                    }
+                  }}
+                  placeholder="Buscar en la documentación... (Shift+Enter para búsqueda inteligente)"
+                  className="pl-10"
+                />
+              </div>
+              <Button
+                variant="primary"
+                onClick={handleIntelligentSearch}
+                disabled={!searchTerm.trim() || isIntelligentSearching}
+                className="flex items-center"
+              >
+                {isIntelligentSearching ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Buscando...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    IA
+                  </>
+                )}
+              </Button>
             </div>
           </motion.div>
+
+          {/* Intelligent Search Results */}
+          {showIntelligentSearch && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8"
+            >
+              <Card className="p-6 bg-slate-800/50 border-purple-500/30">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-white flex items-center">
+                    <Brain className="w-5 h-5 mr-2 text-purple-400" />
+                    Búsqueda Inteligente con IA
+                  </h2>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setShowIntelligentSearch(false)}
+                    className="text-sm"
+                  >
+                    Cerrar
+                  </Button>
+                </div>
+                <div className="text-gray-300 whitespace-pre-wrap">
+                  {isIntelligentSearching && !intelligentSearchResult ? (
+                    <div className="flex items-center justify-center py-8">
+                      <RefreshCw className="w-6 h-6 text-purple-400 animate-spin mr-2" />
+                      <span>Analizando con IA...</span>
+                    </div>
+                  ) : intelligentSearchResult ? (
+                    <div className="prose prose-invert max-w-none">
+                      <pre className="text-gray-300 whitespace-pre-wrap break-words font-sans text-sm leading-relaxed">
+                        {intelligentSearchResult}
+                      </pre>
+                      {isIntelligentSearching && (
+                        <div className="mt-4 flex items-center text-purple-400 text-sm">
+                          <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                          <span>Generando más contenido...</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400">No hay resultados aún</p>
+                  )}
+                </div>
+              </Card>
+            </motion.div>
+          )}
 
           {/* Documentation Sections */}
           <motion.div

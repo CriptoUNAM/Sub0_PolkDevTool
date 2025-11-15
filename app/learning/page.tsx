@@ -13,9 +13,14 @@ import {
   ArrowLeft,
   Star,
   Award,
-  Target
+  Target,
+  MessageCircle,
+  Brain,
+  Send,
+  RefreshCw
 } from 'lucide-react';
 import Link from 'next/link';
+import { Input } from '@/components/ui/Input';
 
 interface LearningPath {
   id: string;
@@ -30,6 +35,9 @@ interface LearningPath {
 
 export default function LearningPage() {
   const [isClient, setIsClient] = useState(false);
+  const [question, setQuestion] = useState('');
+  const [answer, setAnswer] = useState('');
+  const [isAsking, setIsAsking] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -98,6 +106,64 @@ export default function LearningPage() {
     }
   };
 
+  const handleAskTutor = async () => {
+    if (!question.trim() || isAsking) return;
+
+    setIsAsking(true);
+    setAnswer('');
+
+    try {
+      const response = await fetch('/api/learning-tutor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question,
+          learningPath: 'General',
+          progress: 0
+        })
+      });
+
+      if (!response.ok) throw new Error('Error consultando tutor');
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) throw new Error('No se pudo leer la respuesta');
+
+      let fullAnswer = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') break;
+            
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.error) throw new Error(parsed.error);
+              if (parsed.content) {
+                fullAnswer += parsed.content;
+                setAnswer(fullAnswer);
+              }
+            } catch (e) {
+              // Ignorar errores de parsing menores
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error consultando tutor:', error);
+      setAnswer(`Error: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    } finally {
+      setIsAsking(false);
+    }
+  };
+
   return (
     <div className="min-h-screen relative overflow-hidden">
       <NeuralBackground />
@@ -115,8 +181,8 @@ export default function LearningPage() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Volver al inicio
             </Link>
-            <h1 className="text-4xl font-bold text-white mb-2 flex items-center">
-              <BookOpen className="w-8 h-8 mr-3 text-purple-400" />
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 flex items-center flex-wrap gap-2">
+              <BookOpen className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-purple-400" />
               Centro de Aprendizaje
             </h1>
             <p className="text-gray-400">Domina el desarrollo en Polkadot paso a paso</p>
@@ -245,11 +311,83 @@ export default function LearningPage() {
             </div>
           </motion.div>
 
-          {/* Achievements */}
+          {/* AI Tutor */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.6 }}
+            className="mt-12"
+          >
+            <Card className="p-6 bg-slate-800/50 border-slate-700">
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <Brain className="w-6 h-6 mr-2 text-purple-400" />
+                Tutor IA
+              </h2>
+              <p className="text-gray-400 mb-6">Haz cualquier pregunta sobre desarrollo en Polkadot y obtén respuestas personalizadas</p>
+              
+              <div className="space-y-4">
+                <div>
+                  <Input
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                    placeholder="Ejemplo: ¿Qué es un pallet en Substrate?"
+                    className="w-full"
+                    disabled={isAsking}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleAskTutor();
+                      }
+                    }}
+                  />
+                </div>
+                <Button
+                  onClick={handleAskTutor}
+                  disabled={!question.trim() || isAsking}
+                  variant="primary"
+                  className="w-full flex items-center justify-center"
+                >
+                  {isAsking ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Consultando...
+                    </>
+                  ) : (
+                    <>
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Preguntar al Tutor
+                    </>
+                  )}
+                </Button>
+                
+                {answer && (
+                  <div className="mt-6 p-4 bg-slate-900 rounded-lg border border-slate-700">
+                    <div className="prose prose-invert max-w-none">
+                      <div 
+                        className="text-gray-300 whitespace-pre-wrap"
+                        dangerouslySetInnerHTML={{ 
+                          __html: answer
+                            .replace(/```rust\n([\s\S]*?)\n```/g, '<pre class="bg-slate-800 p-4 rounded-lg overflow-x-auto"><code class="text-sm">$1</code></pre>')
+                            .replace(/```([\s\S]*?)```/g, '<pre class="bg-slate-800 p-4 rounded-lg overflow-x-auto"><code class="text-sm">$1</code></pre>')
+                            .replace(/### (.*)/g, '<h3 class="text-lg font-semibold text-white mt-6 mb-3">$1</h3>')
+                            .replace(/## (.*)/g, '<h2 class="text-xl font-semibold text-white mt-8 mb-4">$1</h2>')
+                            .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
+                            .replace(/\*(.*?)\*/g, '<em class="text-purple-300">$1</em>')
+                            .replace(/`(.*?)`/g, '<code class="bg-slate-700 px-1 py-0.5 rounded text-sm">$1</code>')
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </motion.div>
+
+          {/* Achievements */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
             className="mt-12"
           >
             <h2 className="text-2xl font-bold text-white mb-6">Logros</h2>
