@@ -61,38 +61,53 @@ export class SubWalletService {
 
   async getAccounts(): Promise<SubWalletAccount[]> {
     try {
+      console.log('[SubWallet] 🔍 Verificando extensiones...');
       // Verificar primero si hay extensiones disponibles
       const hasExtensions = await this.checkExtensionsAvailable();
       if (!hasExtensions) {
         throw new Error('No se encontró ninguna extensión de wallet. Por favor, instala SubWallet o Polkadot.js extension desde:\n- SubWallet: https://subwallet.app/\n- Polkadot.js: https://polkadot.js.org/extension/');
       }
+      console.log('[SubWallet] ✅ Extensiones detectadas');
 
       // Primero habilitar la extensión (requerido antes de web3Accounts)
-      const extensions = await web3Enable('Polkadot DevKit');
+      // Esto puede mostrar un popup al usuario para aprobar permisos
+      console.log('[SubWallet] 🔐 Habilitando extensión (puede requerir aprobación del usuario)...');
+      
+      // Agregar timeout para evitar que se quede colgado si el usuario no responde
+      const enablePromise = web3Enable('Polkadot DevKit');
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout: La extensión no respondió. Por favor, verifica que tu wallet esté desbloqueada y vuelve a intentar.')), 30000)
+      );
+      
+      const extensions = await Promise.race([enablePromise, timeoutPromise]) as any;
       
       if (!extensions || extensions.length === 0) {
         throw new Error('No se pudo habilitar ninguna extensión de wallet. Por favor, verifica que SubWallet o Polkadot.js extension estén instaladas y activas.');
       }
 
-      console.log('✅ Extensiones habilitadas:', extensions.map(ext => ext.name));
+      console.log('[SubWallet] ✅ Extensiones habilitadas:', extensions.map(ext => ext.name));
 
       // Ahora obtener las cuentas
+      console.log('[SubWallet] 📋 Obteniendo cuentas...');
       const accounts = await web3Accounts();
       
       if (!accounts || accounts.length === 0) {
         throw new Error('No se encontraron cuentas en tu wallet. Por favor, crea una cuenta en SubWallet o Polkadot.js extension primero.');
       }
 
-      console.log(`✅ ${accounts.length} cuenta(s) encontrada(s)`);
+      console.log(`[SubWallet] ✅ ${accounts.length} cuenta(s) encontrada(s)`);
 
-      return accounts.map(account => ({
+      const mappedAccounts = accounts.map(account => ({
         address: account.address,
         name: account.meta.name || 'Unnamed Account',
         source: account.meta.source,
         type: account.type || 'sr25519'
       }));
+
+      console.log('[SubWallet] 📝 Cuentas mapeadas:', mappedAccounts.map(acc => `${acc.name} (${acc.source})`));
+      return mappedAccounts;
     } catch (error) {
-      console.error('Failed to get accounts:', error);
+      console.error('[SubWallet] ❌ Error obteniendo cuentas:', error);
       
       if (error instanceof Error) {
         // Re-lanzar errores específicos con mensajes mejorados

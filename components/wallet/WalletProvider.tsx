@@ -52,49 +52,50 @@ export function WalletProvider({ children }: WalletProviderProps) {
   }, []);
 
   const connect = async () => {
+    console.log('🔄 Iniciando conexión de wallet...');
     setIsLoading(true);
+    
     try {
       // Verificar primero si hay extensiones disponibles
+      console.log('🔍 Verificando extensiones disponibles...');
       const hasExtensions = await subWalletService.checkExtensionsAvailable();
       if (!hasExtensions) {
         const errorMsg = 'No se encontró ninguna extensión de wallet.\n\nPor favor, instala:\n- SubWallet: https://subwallet.app/\n- Polkadot.js: https://polkadot.js.org/extension/';
         alert(errorMsg);
         throw new Error(errorMsg);
       }
+      console.log('✅ Extensiones detectadas');
 
-      // Intentar obtener cuentas de SubWallet primero
+      // Intentar obtener todas las cuentas disponibles directamente
+      console.log('🔍 Obteniendo cuentas disponibles...');
       let selectedAccount;
+      
       try {
-        const subWalletAccounts = await subWalletService.getSubWalletAccounts();
-        
-        if (subWalletAccounts.length > 0) {
-          // Preferir SubWallet si está disponible
-          selectedAccount = subWalletAccounts[0];
-          console.log('✅ Usando cuenta de SubWallet');
-        } else {
-          // Fallback a cualquier cuenta disponible (Polkadot.js, etc.)
-          const allAccounts = await subWalletService.getAccounts();
-          
-          if (allAccounts.length === 0) {
-            throw new Error('No se encontraron cuentas en tu wallet. Por favor, crea una cuenta primero.');
-          }
-          
-          selectedAccount = allAccounts[0];
-          console.log('✅ Usando cuenta disponible:', selectedAccount.source);
-        }
-      } catch (accountsError) {
-        // Si falla obtener cuentas, intentar obtener todas las cuentas disponibles
+        // Primero intentar obtener todas las cuentas
         const allAccounts = await subWalletService.getAccounts();
+        console.log(`📋 ${allAccounts.length} cuenta(s) encontrada(s)`);
         
         if (allAccounts.length === 0) {
-          throw new Error('No se encontraron cuentas en tu wallet. Por favor, crea una cuenta en SubWallet o Polkadot.js extension primero.');
+          throw new Error('No se encontraron cuentas en tu wallet. Por favor, crea una cuenta primero.');
         }
         
-        selectedAccount = allAccounts[0];
+        // Preferir SubWallet si está disponible, sino usar la primera disponible
+        const subWalletAccount = allAccounts.find(acc => 
+          acc.source.toLowerCase().includes('subwallet')
+        );
+        
+        selectedAccount = subWalletAccount || allAccounts[0];
+        console.log('✅ Cuenta seleccionada:', selectedAccount.name, `(${selectedAccount.source})`);
+        
+      } catch (accountsError: any) {
+        console.error('❌ Error obteniendo cuentas:', accountsError);
+        throw accountsError;
       }
 
       // Conectar la cuenta seleccionada
+      console.log('🔗 Conectando cuenta...');
       await subWalletService.connectAccount(selectedAccount.address);
+      console.log('✅ Cuenta conectada');
       
       // Actualizar estado
       setAccount(selectedAccount.address);
@@ -115,13 +116,17 @@ export function WalletProvider({ children }: WalletProviderProps) {
     } catch (error) {
       console.error('❌ Error conectando wallet:', error);
       
+      // Resetear estado en caso de error
+      setAccount(null);
+      setIsConnected(false);
+      
       // Mensajes de error más específicos y útiles
       if (error instanceof Error) {
         const errorMessage = error.message;
         
         if (errorMessage.includes('User rejected') || errorMessage.includes('rejected')) {
           // No mostrar alert si el usuario canceló
-          console.log('Usuario canceló la conexión');
+          console.log('ℹ️ Usuario canceló la conexión');
           return;
         } else if (errorMessage.includes('No se encontró ninguna extensión')) {
           alert('❌ No se encontró ninguna extensión de wallet\n\nPor favor, instala:\n• SubWallet: https://subwallet.app/\n• Polkadot.js: https://polkadot.js.org/extension/');
@@ -131,12 +136,15 @@ export function WalletProvider({ children }: WalletProviderProps) {
           alert('❌ No se pudo habilitar la extensión\n\nAsegúrate de que tu wallet esté desbloqueada y activa.');
         } else {
           // Mostrar el mensaje de error completo
-          alert(`❌ Error conectando wallet:\n\n${errorMessage}`);
+          console.error('Error completo:', error);
+          alert(`❌ Error conectando wallet:\n\n${errorMessage}\n\nRevisa la consola para más detalles.`);
         }
       } else {
+        console.error('Error desconocido:', error);
         alert('❌ Error desconocido al conectar wallet. Por favor, intenta de nuevo.');
       }
     } finally {
+      console.log('🏁 Finalizando proceso de conexión');
       setIsLoading(false);
     }
   };
