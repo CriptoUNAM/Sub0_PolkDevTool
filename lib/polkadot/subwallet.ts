@@ -85,7 +85,7 @@ export class SubWalletService {
         throw new Error('No se pudo habilitar ninguna extensión de wallet. Por favor, verifica que SubWallet o Polkadot.js extension estén instaladas y activas.');
       }
 
-      console.log('[SubWallet] ✅ Extensiones habilitadas:', extensions.map(ext => ext.name));
+      console.log('[SubWallet] ✅ Extensiones habilitadas:', extensions.map((ext: any) => ext.name));
 
       // Ahora obtener las cuentas
       console.log('[SubWallet] 📋 Obteniendo cuentas...');
