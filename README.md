@@ -310,10 +310,11 @@ Este es un **demo completo** para sub0 Hack. Todas las funcionalidades están **
 - **Frontend**: Next.js 15, React 19, TypeScript
 - **Styling**: Tailwind CSS con efectos glassmorphism
 - **Web3**: Polkadot.js API, SubWallet integration
-- **AI**: OpenAI GPT-4 + Groq para generación de contratos
+- **AI**: Google Gemini 2.5 (Pro/Flash) + OpenAI GPT-4 + Groq para generación de contratos
 - **Animations**: Framer Motion para efectos neurales
 - **PWA**: Service Worker, Manifest, Offline support
 - **Blockchain**: Paseo Testnet, Rococo, Westend
+- **Smart Contracts**: ink! (Rust) para contratos inteligentes en Polkadot
 
 ## 🚀 Instalación Rápida
 
@@ -335,7 +336,10 @@ npm run dev
 ## 🔧 Variables de Entorno
 
 ```env
-# OpenAI API Key (opcional - modo demo disponible)
+# Google Gemini API Key (principal - recomendado)
+GEMINI_API_KEY=tu_clave_gemini_aqui
+
+# OpenAI API Key (opcional - fallback)
 OPENAI_API_KEY=tu_clave_openai_aqui
 
 # Polkadot RPC Endpoints
@@ -343,7 +347,7 @@ NEXT_PUBLIC_PASEO_RPC=wss://paseo.rpc.amforc.com
 NEXT_PUBLIC_ROCCO_RPC=wss://rococo-rpc.polkadot.io
 NEXT_PUBLIC_WESTEND_RPC=wss://westend-rpc.polkadot.io
 
-# Groq API (opcional)
+# Groq API (opcional - fallback)
 GROQ_API_KEY=tu_clave_groq_aqui
 ```
 
@@ -397,6 +401,154 @@ GROQ_API_KEY=tu_clave_groq_aqui
 - **Transacciones**: Hash de transacciones
 - **Explorer**: Enlaces al explorador de bloques
 
+### 8. **Test de IA (`/test-ai`)**
+- **Suite de Tests Completa**: Pruebas automatizadas de todas las funcionalidades de IA
+- **Validación de Modelos**: Verifica que todos los modelos de Gemini funcionen correctamente
+- **Tests de Generación**: Prueba generación de contratos en múltiples lenguajes y complejidades
+- **Tests de Explicación**: Valida explicaciones de código en diferentes enfoques
+- **Tests de Debug**: Verifica debugging de errores
+- **Tests de Chat**: Prueba el chatbot asistente
+- **Métricas en Tiempo Real**: Duración, éxito/fallo, y modelos utilizados
+
+## 🤖 Integración de Inteligencia Artificial
+
+### Google Gemini AI (Motor Principal)
+
+El proyecto utiliza **Google Gemini 2.5** como motor de IA principal para todas las funcionalidades:
+
+- ✅ **Generación de Contratos** (`/generate`): Genera código ink! completo desde descripciones en lenguaje natural
+- ✅ **Explicación de Código** (`/explain`): Explica código ink!/Rust con múltiples enfoques (general, seguridad, optimización)
+- ✅ **Debug de Errores** (`/debug`): Analiza y soluciona errores de compilación y runtime
+- ✅ **Chatbot Asistente** (`/chatbot`): Asistente conversacional para desarrollo en Polkadot
+- ✅ **Generación de Tests** (`/test`): Genera tests completos y funcionales para contratos
+- ✅ **Tutor de Aprendizaje** (`/learning`): Guía personalizada para aprender ink! y Polkadot
+
+### Modelos Utilizados
+
+- **gemini-2.5-flash**: Para generación rápida de código y debug (más rápido y eficiente)
+- **gemini-2.5-pro**: Para explicaciones detalladas y chat (más inteligente y preciso)
+- **gemini-2.5-flash-lite**: Versión ligera y económica
+- **Fallback**: gemini-1.5-flash, gemini-1.5-pro, gemini-pro (modelos legacy)
+
+### Arquitectura de IA
+
+```
+Cliente (Frontend) 
+  → lib/api-client.ts 
+  → app/api/*/route.ts 
+  → lib/ai/gemini.ts 
+  → Google Gemini API
+```
+
+- ✅ **Streaming en Tiempo Real**: Respuestas usando Server-Sent Events (SSE)
+- ✅ **Seguridad**: API key solo en el servidor (no expuesta al cliente)
+- ✅ **Validación**: Input validation en cada endpoint
+- ✅ **Manejo de Errores**: Robusto en todos los niveles
+
+Ver `GEMINI_SETUP.md` para más detalles sobre la configuración.
+
+## 📦 Contratos Inteligentes
+
+El proyecto incluye **3 contratos estratégicos** para maximizar oportunidades en el hackathon:
+
+### 1. DevKit Showcase Contract (`contracts/devkit-showcase/`)
+
+**Propósito**: Demostrar el valor de Polkadot DevKit
+
+**Funcionalidades**:
+- DAO Governance con propuestas y votación
+- Staking de tokens con recompensas
+- Sistema completo de gobernanza
+
+**Track**: Polkadot Main Track ($16k)
+
+### 2. Arkiv Data Storage Contract (`contracts/arkiv-storage/`)
+
+**Propósito**: Integrar Arkiv SDK para almacenamiento off-chain
+
+**Funcionalidades**:
+- Registro de contratos con metadata
+- Integración con Arkiv SDK (off-chain)
+- TTL para datos temporales
+- Subscriptions y queries
+
+**Track**: Arkiv Main Track ($10k)
+
+### 3. Hyperbridge Cross-Chain Oracle (`contracts/hyperbridge-oracle/`)
+
+**Propósito**: Usar Hyperbridge SDK para cross-chain queries
+
+**Funcionalidades**:
+- Oracle de precios cross-chain
+- Consultas de storage desde otras chains
+- Verificación de datos cross-chain
+
+**Track**: Hyperbridge Bounty ($5k)
+
+### Compilación y Deployment
+
+```bash
+# Prerrequisitos
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+cargo install cargo-contract --force
+rustup toolchain install nightly
+rustup target add wasm32-unknown-unknown --toolchain nightly
+
+# Compilar un contrato
+cd contracts/devkit-showcase
+cargo +nightly contract build
+
+# Deploy a Paseo Testnet
+# Usar Polkadot.js Apps o CLI (ver contracts/README.md)
+```
+
+Ver `contracts/README.md` para documentación completa de los contratos.
+
+## 🧪 Testing
+
+### Tests de IA (`/test-ai`)
+
+Suite completa de tests automatizados para validar todas las funcionalidades de IA:
+
+- ✅ **Conexión Básica**: Verifica conectividad con Gemini API
+- ✅ **Generación de Contratos**: Tests para múltiples lenguajes (ink!, Solidity, Rust) y niveles de complejidad
+- ✅ **Explicación de Código**: Tests para diferentes enfoques (general, seguridad, optimización, deployment)
+- ✅ **Debug de Errores**: Tests para diferentes tipos de errores (compilación, runtime, lógica)
+- ✅ **Chatbot**: Tests de conversación y contexto
+- ✅ **Tutor de Aprendizaje**: Tests para diferentes niveles y progreso
+- ✅ **Asistente de Deployment**: Tests para diferentes redes y tipos de contratos
+
+### Generación Automática de Tests
+
+El sistema puede generar tests completos y funcionales para cualquier contrato:
+
+```typescript
+// Genera tests automáticamente usando IA
+import { generateTestsStream } from '@/lib/ai/gemini-helpers';
+
+for await (const testCode of generateTestsStream(contractCode, 'ink')) {
+  // Recibe código de tests en tiempo real
+}
+```
+
+**Características de Tests Generados**:
+- Tests para constructor
+- Tests para cada función pública
+- Tests de casos edge (valores límite, errores esperados)
+- Tests de eventos emitidos
+- Tests de validaciones y seguridad
+- Tests de integración entre funciones
+- Tests de casos de éxito y error
+- Setup y teardown cuando es necesario
+
+### Ejecutar Tests de IA
+
+1. Navegar a `/test-ai`
+2. Click en "Ejecutar Todos los Tests"
+3. Ver resultados en tiempo real con métricas de duración y modelos utilizados
+
+Ver `app/api/test-ai/route.ts` para la implementación completa.
+
 ## 🏗️ Arquitectura del Proyecto
 
 ```
@@ -411,7 +563,15 @@ polkadot-devkit/
 │   ├── docs/             # Documentation Hub
 │   ├── deploy/           # Deployment Assistant
 │   ├── test/             # Demo Obligatorio
+│   ├── test-ai/          # Tests de IA
+│   ├── check-models/     # Verificación de Modelos
 │   └── api/              # API Routes
+│       ├── generate/     # Generación de contratos
+│       ├── explain/      # Explicación de código
+│       ├── debug/        # Debug de errores
+│       ├── chat/         # Chatbot
+│       ├── test-ai/      # Tests de IA
+│       └── ...           # Más endpoints
 ├── components/            # React Components
 │   ├── ui/               # UI Components
 │   ├── backgrounds/     # Neural Background Effects
@@ -420,9 +580,17 @@ polkadot-devkit/
 │   └── navigation/       # Navigation Components
 ├── lib/                   # Utilities & Libraries
 │   ├── polkadot/         # Polkadot API Integration
-│   ├── ai/               # AI Integration (OpenAI + Groq)
+│   ├── ai/               # AI Integration
+│   │   ├── gemini.ts     # Google Gemini (principal)
+│   │   └── gemini-helpers.ts  # Helpers especializados
+│   ├── api-client.ts     # Cliente para llamadas API
 │   ├── templates/        # Contract Templates
 │   └── utils/            # Utility Functions
+├── contracts/            # Smart Contracts
+│   ├── devkit-showcase/  # Contrato showcase
+│   ├── arkiv-storage/    # Contrato con Arkiv
+│   ├── hyperbridge-oracle/ # Contrato con Hyperbridge
+│   └── README.md         # Documentación de contratos
 ├── public/               # Static Assets
 │   ├── manifest.json     # PWA Manifest
 │   ├── sw.js            # Service Worker
